@@ -1,0 +1,81 @@
+name: CSE daily archive
+
+on:
+  schedule:
+    # Times are UTC; Colombo = UTC+5:30. Runs every day: the script itself decides whether it was a trading day.
+    - cron: "20 9 * * *"    # 14:50 Colombo - main run after the close (waits if the market is still open)
+    - cron: "0 11 * * *"    # 16:30 Colombo - retry (no-op if already archived)
+    - cron: "30 13 * * *"   # 19:00 Colombo - retry
+    - cron: "30 16 * * *"   # 22:00 Colombo - last retry
+    - cron: "45 17 * * *"   # 23:15 Colombo - check today's file exists
+    - cron: "30 2 * * *"    # 08:00 Colombo - check yesterday (catches days when every run was skipped)
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "collect or check"
+        default: collect
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: archive
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 200
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run
+        id: run
+        env:
+          MODE: ${{ github.event.inputs.mode || ((github.event.schedule == '45 17 * * *' || github.event.schedule == '30 2 * * *') && 'check' || 'collect') }}
+        run: python collect.py "$MODE"
+
+      - name: Commit archive
+        if: always()
+        run: |
+          git config user.name "cse-archive-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          if ! git diff --cached --quiet; then
+            git commit -m "Archive $(TZ=Asia/Colombo date +%F)"
+            git pull --rebase
+            git push
+          fi
+
+      - name: Notify on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ERR: ${{ steps.run.outputs.error }}
+        run: |
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          BODY="**${ERR:-Workflow failed (see log)}**
+
+          Run: $RUN_URL
+          Trade-by-trade data is only served for the current day: rerun from the Actions tab (Run workflow) before it resets."
+          gh label create collection-failure --color B60205 2>/dev/null || true
+          OPEN=$(gh issue list --label collection-failure --state open --json number --jq '.[0].number')
+          if [ -n "$OPEN" ]; then
+            gh issue comment "$OPEN" --body "$BODY"
+          else
+            gh issue create --title "CSE archive failed $(TZ=Asia/Colombo date +%F)" --label collection-failure --body "$BODY"
+          fi
+
+      - name: Close failure issue after recovery
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for n in $(gh issue list --label collection-failure --state open --json number --jq '.[].number'); do
+            gh issue close "$n" --comment "Recovered: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          done
