@@ -16,7 +16,7 @@ on:
         default: collect
 
 permissions:
-  contents: write
+  contents: read
   issues: write
 
 concurrency:
@@ -28,29 +28,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 200
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
       - name: Run
         id: run
         env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
           MODE: ${{ github.event.inputs.mode || ((github.event.schedule == '45 17 * * *' || github.event.schedule == '30 2 * * *') && 'check' || 'collect') }}
         run: python collect.py "$MODE"
-
-      - name: Commit archive
-        if: always()
-        run: |
-          git config user.name "cse-archive-bot"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data
-          if ! git diff --cached --quiet; then
-            git commit -m "Archive $(TZ=Asia/Colombo date +%F)"
-            git pull --rebase
-            git push
-          fi
 
       - name: Notify on failure
         if: failure()

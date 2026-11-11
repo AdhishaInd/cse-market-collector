@@ -1,16 +1,23 @@
-# CSE market archive
+# CSE market collector
 
-Daily archive of Colombo Stock Exchange data that the cse.lk website API serves only for the current day:
+Scheduled collector for Colombo Stock Exchange data that the cse.lk website API serves only for the current day:
 every trade of every stock, volume at each price, index by minute, and the day's market, sector and foreign-flow
-snapshots. Collected by GitHub Actions (`.github/workflows/archive.yml`, script `collect.py`, Python standard library).
+snapshots. Runs on GitHub Actions (`.github/workflows/archive.yml`, script `collect.py`, Python standard library)
+and stores into a private Turso (libSQL) database; this repository holds code only.
 
-## Files
+## Storage
 
-- `data/YYYY/MM/YYYY-MM-DD.json.gz`: one file per trading day. Keys: `tradeSummary`, `trades` (symbol -> `rows` of
-  `t` ms, `p` price, `q` shares), `detailedTrades`, `marketSummery`, `dailyMarketSummery`, `marketIndices`,
-  `GICSSectorSummery`, `getContributorsChart`, `getContributors`, `mostActiveVolumes`, `list_by_market_cap`,
-  `aspi_minute`, `snp_minute`, `aspi_high_low`, `snp_high_low`, `checks`.
-- `data/index.csv`: one line per archived day (stocks, trade rows, size, fetch time).
+Set repository secrets `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`. Tables:
+
+| Table | Contents |
+|---|---|
+| `archive_day` | One row per archived trading day (stocks, trade rows, size, fetch time). Written last: a day counts as archived only when everything else is stored |
+| `trade` | Every trade: `trade_id`, `date`, `symbol`, `t` (ms), `price`, `qty` |
+| `day_summary` | Per stock per day: open, high, low, close, previous close, share volume, trades, turnover, market cap |
+| `archive_blob` | The complete raw day (gzip JSON, 1 MB parts, ordered by `part`): `tradeSummary`, `trades`, `detailedTrades`, `marketSummery`, `dailyMarketSummery`, `marketIndices`, `GICSSectorSummery`, `getContributorsChart`, `getContributors`, `mostActiveVolumes`, `list_by_market_cap`, `aspi_minute`, `snp_minute`, `aspi_high_low`, `snp_high_low`, `checks` |
+
+Without the secrets, `collect.py` writes `data/YYYY/MM/YYYY-MM-DD.json.gz` locally instead;
+`python collect.py upload <file>` loads such a file into Turso.
 
 ## Schedule and edge cases
 
