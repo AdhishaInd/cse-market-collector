@@ -1,3 +1,59 @@
 {
-  "_about": "Rights issue dates read by a person or agent from the letter's page image, for letters the automatic reader refused (events/pipeline/letters.py needs-reading). Key = announcementId. Each entry: renunciation, acceptance (YYYY-MM-DD, exactly as printed), read_from (document URL + page), reader, read_on, note. Validate with: python3 -I events/pipeline/letters.py check-reviewed. These override automatic readings."
+ "_about": "Rights issue dates read by a person or agent from the letter's page image, for letters the automatic reader refused (events/pipeline/letters.py needs-reading). Key = announcementId. Each entry: renunciation, acceptance (YYYY-MM-DD, exactly as printed), read_from (document URL + page), reader, read_on, note. Validate with: python3 -I events/pipeline/letters.py check-reviewed. These override automatic readings.",
+ "39660": {
+  "renunciation": "2026-12-09",
+  "acceptance": "2026-12-14",
+  "read_from": "https://cdn.cse.lk/cmt/announcement_portal_prod/11. NTB - Announcement of Rights Issue Dates_14928124992291641.pdf page 1",
+  "reader": "Claude (page image)",
+  "read_on": "2026-11-14",
+  "note": "letter's XR 2026-11-17, record 2026-11-18, trading start 2026-12-02 match the calendar"
+ },
+ "39673": {
+  "renunciation": "2026-12-08",
+  "acceptance": "2026-12-11",
+  "read_from": "https://cdn.cse.lk/cmt/announcement_portal_prod/CSE ANNOUNCEMENT FOR RIGHT ISSUE_14939066109246526.pdf page 1",
+  "reader": "Claude (page image)",
+  "read_on": "2026-11-14",
+  "note": "letter's XR 2026-11-16, record 2026-11-17, trading start 2026-12-01 match the calendar"
+ },
+ "39800": {
+  "renunciation": "2026-12-09",
+  "acceptance": "2026-12-14",
+  "read_from": "https://cdn.cse.lk/cmt/announcement_portal_prod/Final - CSE Announcement_20261028_0001_16056646723156638.pdf page 1",
+  "reader": "Claude (page image)",
+  "read_on": "2026-11-14",
+  "note": "letter's XR 2026-11-17, record 2026-11-18, trading start 2026-12-02 match the calendar"
+ },
+ "39864": {
+  "renunciation": "2026-12-29",
+  "acceptance": "2027-01-04",
+  "read_from": "https://cdn.cse.lk/cmt/announcement_portal_prod/03.11.2026 UBC RIGHTS ISSUE 2026_16559348719798405.pdf page 1",
+  "reader": "Claude (page image)",
+  "read_on": "2026-11-14",
+  "note": "letter's XR 2026-12-04, record 2026-12-07, trading start 2026-12-18 match the calendar"
+ },
+ "39922": {
+  "renunciation": "2026-12-14",
+  "acceptance": "2026-12-17",
+  "read_from": "https://cdn.cse.lk/cmt/announcement_portal_prod/Right Issue - Dates Disclosure_16825690452703017.pdf page 1",
+  "reader": "Claude (page image)",
+  "read_on": "2026-11-14",
+  "note": "letter's XR 2026-11-23, record 2026-11-25, trading start 2026-12-07 match the calendar"
+ },
+ "39940": {
+  "renunciation": "2026-12-28",
+  "acceptance": "2026-12-31",
+  "read_from": "https://cdn.cse.lk/cmt/announcement_portal_prod/Annoucement_17082564365502538.pdf page 1",
+  "reader": "Claude (page image)",
+  "read_on": "2026-11-14",
+  "note": "letter's XR 2026-12-03, record 2026-12-04, trading start 2026-12-17 match the calendar"
+ },
+ "39979": {
+  "renunciation": "2026-12-28",
+  "acceptance": "2026-12-31",
+  "read_from": "https://cdn.cse.lk/cmt/announcement_portal_prod/12.11.2026 - Rights Issue Dates_17350702030608131.pdf page 1",
+  "reader": "Claude (page image)",
+  "read_on": "2026-11-14",
+  "note": "letter's XR 2026-12-03, record 2026-12-04, trading start 2026-12-17 match the calendar"
+ }
 }
