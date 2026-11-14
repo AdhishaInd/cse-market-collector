@@ -121,12 +121,12 @@ def build(as_of, allow_large):
 def swap(fp):
     if fingerprint(MAIN) != fp:
         return False
-    backup = ROOT / "db" / f"backup_events_{dt.datetime.now(COLO):%Y%m%d_%H%M%S}.db"
+    backup = MAIN.parent / f"backup_events_{dt.datetime.now(COLO):%Y%m%d_%H%M%S}.db"   # same filesystem as main
     os.link(MAIN, backup)                 # keeps the old main (same inode, no copy)
     os.replace(WORK, MAIN)                # atomic rename
     dfd = os.open(MAIN.parent, os.O_RDONLY)
     os.fsync(dfd); os.close(dfd)
-    olds = sorted((ROOT / "db").glob("backup_events_*.db"))
+    olds = sorted(MAIN.parent.glob("backup_events_*.db"))
     for f in olds[:-KEEP_BACKUPS]:
         f.unlink()
     log("swapped; previous main kept as", backup.name)

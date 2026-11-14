@@ -437,7 +437,7 @@ def cmd_push_results(t, a):
 
 def cmd_pull_events(t, a):
     import refresh_events as R
-    main = pathlib.Path(a.main)
+    main = pathlib.Path(a.main).resolve()
     R.MAIN, R.WORK = main, main.with_name("work_events_pull.db")
     fp = R.copy_main()
     db = sqlite3.connect(R.WORK)
@@ -464,8 +464,12 @@ def cmd_pull_events(t, a):
     if R.table_counts(db) != before:
         raise Fail("pull changed non-event tables")
     db.close()
-    if not R.swap(fp):
-        R.WORK.unlink(missing_ok=True)
+    try:
+        swapped = R.swap(fp)
+    finally:
+        if R.WORK.exists():
+            R.WORK.unlink()
+    if not swapped:
         raise Fail("main changed during the pull; nothing swapped (rerun)")
     print("local main now at as_of", remote_asof[0][0])
 

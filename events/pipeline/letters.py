@@ -2,7 +2,8 @@
 only in the PDF letter attached to a 'RIGHTS ISSUE (DATES)' announcement (no JSON field carries them).
 
 Usage:
-  python3 -I letters.py                  # read letters of rights announcements not read yet (downloads their PDFs)
+  python3 -I letters.py [-v]             # read letters of rights announcements not read yet (downloads their PDFs);
+                                         # -v lists each letter (kept off in the public Actions log)
   python3 -I letters.py needs-reading    # list letters the automatic reader refused (for a person / agent)
   python3 -I letters.py check-reviewed   # validate reviewed/letter_readings.json against the calendar
 
@@ -28,6 +29,7 @@ LETTERS = ROOT / "raw_api" / "events" / "letters"
 REVIEWED = pathlib.Path(__file__).resolve().parent.parent / "reviewed" / "letter_readings.json"
 COLO = dt.timezone(dt.timedelta(hours=5, minutes=30))
 CATEGORY = "RIGHTS ISSUE (DATES)"
+VERBOSE = "-v" in sys.argv
 
 MONTHS = {"january": 1, "february": 2, "march": 3, "april": 4, "may": 5, "june": 6, "july": 7, "august": 8,
           "september": 9, "october": 10, "november": 11, "december": 12,
@@ -222,7 +224,8 @@ def process(max_n=40, since=None):
         write_reading(aid, rec, row)
         counts[rec["status"]] = counts.get(rec["status"], 0) + 1
         n += 1
-        print(aid, row.get("symbol"), rec["status"], rec.get("reason") or f"{rec.get('renunciation')} / {rec.get('acceptance')}", flush=True)
+        if VERBOSE:      # off in the public Actions log: counts only
+            print(aid, row.get("symbol"), rec["status"], rec.get("reason") or f"{rec.get('renunciation')} / {rec.get('acceptance')}", flush=True)
     return counts
 
 
@@ -276,7 +279,8 @@ def check_reviewed():
 
 
 def main():
-    cmd = sys.argv[1] if len(sys.argv) > 1 else "read"
+    args = [x for x in sys.argv[1:] if x != "-v"]
+    cmd = args[0] if args else "read"
     if cmd == "needs-reading":
         for r in needs_reading():
             print(json.dumps({k: r.get(k) for k in ("announcementId", "symbol", "company", "reason", "documents", "renunciation", "acceptance")}))
