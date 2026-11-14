@@ -5,6 +5,9 @@ every trade of every stock, volume at each price, index by minute, and the day's
 snapshots. Runs on GitHub Actions (`.github/workflows/archive.yml`, script `collect.py`, Python standard library)
 and stores into a private Turso (libSQL) database; this repository holds code only.
 
+Also here: the **event calendar** job (dividends, rights issues, AGMs, results dates; `events/`, workflow
+`.github/workflows/events.yml`), described in [events/README.md](events/README.md).
+
 ## Storage
 
 Set repository secrets `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`. Tables:

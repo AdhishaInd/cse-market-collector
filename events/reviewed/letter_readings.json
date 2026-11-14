@@ -1,0 +1,3 @@
+{
+  "_about": "Rights issue dates read by a person or agent from the letter's page image, for letters the automatic reader refused (events/pipeline/letters.py needs-reading). Key = announcementId. Each entry: renunciation, acceptance (YYYY-MM-DD, exactly as printed), read_from (document URL + page), reader, read_on, note. Validate with: python3 -I events/pipeline/letters.py check-reviewed. These override automatic readings."
+}
