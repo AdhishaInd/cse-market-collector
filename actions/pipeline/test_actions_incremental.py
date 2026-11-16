@@ -329,6 +329,32 @@ class Builder(Fixture):
         self.assertEqual(self.q("select action_id, evidence from ac_link"), [(4182, "same_event")])
 
 
+    def test_weak_link_never_overwrites_a_set_date(self):
+        # a 'further announcement' of a dividend whose first notice was missed: the only recent action is the previous
+        # dividend (same amount, already dated). Attaching would overwrite its ex-date; it must go to review instead.
+        self.notice(40090, "CASH DIVIDEND", "GAMMA PLC", dt.date(2026, 11, 13),
+                    {"reqBaseAnnouncement": {"id": 40090, "dType": "CashDividendWithDates", "symbol": "CCC", "remarks": "Further announcement",
+                                             "votingDivPerShare": 1.5, "xd": "24 Nov 2026", "dateOfInitialAnnouncement": "10 Nov 2026"}})
+        self.run_build()
+        self.assertEqual(self.q("select count(*) from ac_value where action_id=4182"), [(0,)])          # 4182 untouched
+        self.assertEqual(self.q("select action_id, ex_date from ac_action"), [(4183, "2026-11-24")])
+        self.assertEqual(self.q("select item_key like 'unlinked:%' from ac_queue"), [(1,)])
+
+    def test_follow_up_does_not_prefer_a_stale_undated_action(self):
+        # A: a proposal that never got dates; B: a later issue, dated. B's subscription notice must not attach to A.
+        self.notice(40001, "RIGHTS ISSUE", "ALPHA HOLDINGS PLC", dt.date(2026, 10, 20), {"reqBaseAnnouncement": {"id": 40001, "dType": "RightsIssue", "symbol": "AAA"}})
+        self.notice(40002, "RIGHTS ISSUE", "ALPHA HOLDINGS PLC", dt.date(2026, 10, 25), rights(40002, "AAA", "25 Oct 2026"))
+        self.notice(40003, "RIGHTS ISSUE (DATES)", "ALPHA HOLDINGS PLC", dt.date(2026, 11, 2),
+                    general(40003, "AAA", "02 Nov 2026", "RIGHTS ISSUE (DATES)", "Further to the announcement dated 25th October 2026", xr=ms(2026, 11, 20)), general=True)
+        self.notice(40004, "RIGHTS ISSUE", "ALPHA HOLDINGS PLC", dt.date(2026, 11, 10),
+                    {"reqBaseAnnouncement": {"id": 40004, "dType": "RightsIssue", "symbol": "AAA", "remarks": "Level of Subscription"}})
+        self.run_build()
+        acts = self.q("select action_id, ex_date from ac_action order by 1")
+        self.assertEqual(acts[:2], [(4183, None), (4184, "2026-11-20")])
+        self.assertNotIn((4183, 504), self.q("select action_id, announcement_pk from ac_link"))         # not attached to the stale proposal
+        self.assertIn("unlinked:504:10:RIGHTS_ISSUE", [r[0] for r in self.q("select item_key from ac_queue")])
+
+
 class PullIntoMain(Fixture):
     def make_main(self):
         p = self.root / "main.db"

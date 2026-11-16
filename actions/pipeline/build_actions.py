@@ -82,6 +82,12 @@ def same(field, a, b):
     return str(a) == str(b)
 
 
+def changes_set_dates(a, c):
+    """True when notice values `a` would replace a date that action `c` already holds (terms are checked by
+    notices.terms_disagree)."""
+    return any(a.get(f) is not None and c.get(f) is not None and not same(f, c[f], a[f]) for f in N.DATE_FIELDS)
+
+
 class Builder:
     def __init__(self, db, run_at, today=None, kind_map=None, reviewed=None, decisions=None):
         self.db, self.run = db, run_at
@@ -281,7 +287,13 @@ class Builder:
         if follow_up:
             open_ = [c for c in recent if not N.is_dated(c) and not N.terms_disagree(kind, a, c)]
             if len(open_) == 1:
-                return open_[0]["action_id"], "only_open"
+                o = open_[0]
+                if follow_up in ("listing", "subscription", "further") and any(
+                        c is not o and c["announced_on"] and o["announced_on"] and c["announced_on"] > o["announced_on"] for c in recent):
+                    # these notices follow the latest issue, which is usually dated by now: an older undated action
+                    # (a proposal that never got dates) is not evidence enough
+                    return None, "an undated action and a later action of this kind could match"
+                return o["action_id"], "only_open"
             if len(open_) > 1:
                 return None, f"{len(open_)} open actions of this kind could match"
             if follow_up in ("listing", "subscription", "further"):
@@ -290,6 +302,9 @@ class Builder:
                 near = [c for c in cands if on and c["announced_on"] and (dt.date.fromisoformat(on) - dt.date.fromisoformat(c["announced_on"])).days <= RECENT_WINDOW_DAYS
                         and not N.terms_disagree(kind, a, c)]
                 if len(near) == 1:
+                    if changes_set_dates(a, near[0]):
+                        # weak evidence never replaces a date the action already holds
+                        return None, "the only recent action of this kind holds other dates"
                     return near[0]["action_id"], "only_recent"
                 if len(near) > 1:
                     return None, f"{len(near)} recent actions of this kind could match"
