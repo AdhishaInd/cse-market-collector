@@ -91,9 +91,11 @@ jobs:
           N=$(python -I events/pipeline/letters.py needs-reading | wc -l)
           gh label create letters-need-reading --color FBCA04 2>/dev/null || true
           OPEN=$(gh issue list --label letters-need-reading --state open --json number --jq '.[0].number')
+          BODY="$N rights issue letters could not be read automatically (count updated each run). Locally: \`python3 -I events/pipeline/events_sync.py needs-reading\` (see events/README.md, 'Reading flagged letters'). This issue closes itself when none are left."
           if [ "$N" -gt 0 ] && [ -z "$OPEN" ]; then
-            gh issue create --title "Rights letters waiting to be read" --label letters-need-reading \
-              --body "$N rights issue letters could not be read automatically. Locally: \`python3 -I events/pipeline/events_sync.py needs-reading\` (see events/README.md, 'Reading flagged letters'). This issue closes itself when none are left."
+            gh issue create --title "Rights letters waiting to be read" --label letters-need-reading --body "$BODY"
+          elif [ "$N" -gt 0 ]; then
+            gh issue edit "$OPEN" --body "$BODY"
           elif [ "$N" -eq 0 ] && [ -n "$OPEN" ]; then
             gh issue close "$OPEN" --comment "No letters left to read."
           fi
