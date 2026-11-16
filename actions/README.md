@@ -27,7 +27,9 @@ the job's public log and issues show counts only.
      a time, ≥ 3 s apart, cached, at most 40 per run; HTTP 429/403, an HTML/WAF page or a non-JSON reply stops the run
      (exit 2) and nothing is retried. Notices left over when the budget runs out wait for the next run.
 3. **Push.** `actions_sync.py push-results` writes this run's `ac_` rows, new cache files and the run record (`ac_run`)
-   in one Turso transaction. The cache and run record are pushed even when the build was refused.
+   in one Turso transaction. The cache and run record are pushed even when the build was refused. Rows the run created
+   are plain inserts: if another run already wrote the same notice pk / action id / value id (a local run overlapping
+   the cloud job, or a push from a stale copy), the whole push fails and nothing is overwritten - pull and rerun.
 
 Schedule: 19:30 Colombo daily (after the event calendar at 18:30 and the evening filings), and a 23:00 retry that does
 nothing when today already succeeded or the CSE refused a request today. A failure opens an issue (label `actions-failure`), closed by the next success.

@@ -180,6 +180,24 @@ def upsert_sql(table, cols):
             f'ON CONFLICT({",".join(keys)}) DO UPDATE SET {upd}')
 
 
+CREATED_COL = {"ac_announcement": "captured_at", "ac_action": "created_at", "ac_link": "recorded_at", "ac_value": "recorded_at",
+               "ac_queue": "created_at"}
+
+
+def push_statements(db, run_at):
+    """(sql, args) for this run's rows. A row the run CREATED (new notice pk, action id, value id, link, queue item) is
+    a plain INSERT: if another run (a local run overlapping the cloud job, or a run from a stale copy) already wrote
+    that key, the transaction fails and nothing is written, instead of one action/notice overwriting another under
+    the same id. Rows the run only updated are upserts."""
+    out = []
+    for tb, (cols, rows) in run_rows(db, run_at).items():
+        cc = cols.index(CREATED_COL[tb]) if tb in CREATED_COL else None
+        ins = f'INSERT INTO "{tb}" ({",".join(chr(34) + c + chr(34) for c in cols)}) VALUES ({",".join("?" * len(cols))})'
+        for r in rows:
+            out.append((ins if cc is not None and r[cc] == run_at else upsert_sql(tb, cols), list(r)))
+    return out
+
+
 def run_rows(db, run_at):
     """Rows of the ac_ tables this run wrote (updated_at = run_at), per table."""
     out = {}
@@ -204,10 +222,10 @@ def cmd_push_results(t, a):
     tx = Tx(t)
     try:
         if status.get("ok"):
-            for tb, (cols, rows) in run_rows(db, status["started"]).items():
-                for r in rows:
-                    tx.add(upsert_sql(tb, cols), list(r))
-                print(tb, "rows", len(rows))
+            stmts = push_statements(db, status["started"])
+            for sql, args in stmts:
+                tx.add(sql, args)
+            print("rows", len(stmts))
         n = 0
         for rel, p in cache_files(root).items():
             b = p.read_bytes()

@@ -492,6 +492,23 @@ class Sync(unittest.TestCase):
         self.assertEqual([r[0] for r in out["ac_queue"][1]], ["k2"])
         self.assertIn("ON CONFLICT(action_id,announcement_pk)", S.upsert_sql("ac_link", ["action_id", "announcement_pk", "evidence"]))
 
+    def test_created_rows_are_inserts_so_a_concurrent_run_cannot_overwrite_an_id(self):
+        db = sqlite3.connect(":memory:")
+        B.ensure_schema(db)
+        db.execute("insert into ac_value values (1, 7, 'ex_date', '2026-11-20', 'SUPERSEDED', 1, 'structured', 'R0', 2, 'R1', null)")  # updated by R1
+        db.execute("insert into ac_value values (2, 7, 'ex_date', '2026-11-27', 'CURRENT', 2, 'structured', 'R1', null, 'R1', null)")  # created by R1
+        db.execute("insert into ac_action (action_id, company_id, security_id, action_type, detail_level, created_by_pk, created_at, updated_at) values (7, 1, 10, 'RIGHTS_ISSUE', 'STRUCTURED', 1, 'R1', 'R1')")
+        st = {(sql.split('"')[1], args[0]): sql for sql, args in S.push_statements(db, "R1")}
+        self.assertNotIn("ON CONFLICT", st[("ac_value", 2)])
+        self.assertNotIn("ON CONFLICT", st[("ac_action", 7)])
+        self.assertIn("ON CONFLICT", st[("ac_value", 1)])
+        # the same key written by another run first: the insert fails (in Turso: the whole push transaction)
+        other = sqlite3.connect(":memory:")
+        B.ensure_schema(other)
+        other.execute("insert into ac_action (action_id, company_id, security_id, action_type, detail_level, created_by_pk, created_at, updated_at) values (7, 2, 20, 'CASH_DIVIDEND', 'STRUCTURED', 5, 'R2', 'R2')")
+        with self.assertRaises(sqlite3.IntegrityError):
+            other.execute(st[("ac_action", 7)], [r for r in db.execute("select * from ac_action")][0])
+
     def test_no_retry_on_the_day_the_cse_refused(self):
         class T:                                     # the Turso client, backed by a local ac_run table
             def __init__(self, runs):
