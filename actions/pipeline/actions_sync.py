@@ -213,7 +213,7 @@ def copy_db(main, work):
 def swap(main, work, fp):
     if fingerprint(main) != fp:
         return None
-    backup = main.parent / f"backup_actions_{dt.datetime.now(COLO):%Y%m%d_%H%M%S}.db"
+    backup = main.parent / f"backup_actions_{dt.datetime.now(COLO):%Y%m%d_%H%M%S_%f}.db"
     os.link(main, backup)
     os.replace(work, main)
     dfd = os.open(main.parent, os.O_RDONLY)
@@ -240,10 +240,20 @@ HISTORY_DDL = [
 OWN_MAIN_TABLES = {"action_value_history", "action_capture_queue", "action_capture_link"}
 
 
-def apply_to_main(db, rows):
+def held_actions(rows):
+    """New actions waiting for review (an OPEN needs-review item names the action and the notice that created it):
+    not pulled into main until the item is resolved, so a possible duplicate never reaches the price adjustments."""
+    created = {r["action_id"]: r["created_by_pk"] for r in rows["ac_action"]}
+    return {q["action_id"] for q in rows["ac_queue"] if q["queue"] == "needs-review" and q["status"] == "OPEN"
+            and q["action_id"] in created and created[q["action_id"]] == q["announcement_pk"]}
+
+
+def apply_to_main(db, rows, include_unreviewed=False):
     """Apply the captured rows (dict table -> list of dicts) to a copy of main. Returns a report dict. Raises Fail on an
     id clash. Idempotent: rows already in main are skipped."""
-    out = {"notices_added": 0, "actions_added": 0, "links_added": 0, "values_applied": 0, "value_conflicts": [], "skipped_same_as": 0}
+    out = {"notices_added": 0, "actions_added": 0, "links_added": 0, "values_applied": 0, "value_conflicts": [], "skipped_same_as": 0,
+           "held_for_review": 0}
+    held = set() if include_unreviewed else held_actions(rows)
     for s in HISTORY_DDL:
         db.execute(s)
     ann_cols = [c for c in B.ANN_COLS]
@@ -270,11 +280,14 @@ def apply_to_main(db, rows):
             if tuple(have) != (r["security_id"], r["action_type"]):
                 raise Fail(f"action_id {r['action_id']} is another action in main (local ids created since go-live?)")
             continue
+        if r["action_id"] in held:
+            out["held_for_review"] += 1
+            continue
         db.execute(f"insert into corporate_action ({','.join(act_cols)}) values ({','.join('?' * len(act_cols))})", [r[c] for c in act_cols])
         out["actions_added"] += 1
     for r in rows["ac_link"]:
         if not db.execute("select 1 from corporate_action where action_id=?", (r["action_id"],)).fetchone():
-            continue            # a SAME_AS action that never reached main
+            continue            # a SAME_AS action that never reached main, or one held for review
         c = db.execute("insert or ignore into corporate_action_announcement values (?,?)", (r["action_id"], r["announcement_pk"]))
         out["links_added"] += c.rowcount
     # value changes on actions that were already in main (the job's own new actions were inserted complete above)
@@ -316,7 +329,7 @@ def read_rows(t):
     return rows
 
 
-def pull_into(main, rows, dry_run=False):
+def pull_into(main, rows, dry_run=False, include_unreviewed=False):
     """copy -> apply -> check -> swap. Returns (report, backup path or None)."""
     main = pathlib.Path(main).resolve()
     work = main.with_name("work_actions_pull.db")
@@ -325,7 +338,7 @@ def pull_into(main, rows, dry_run=False):
         db = sqlite3.connect(work)
         db.execute("pragma foreign_keys=on")
         before = counts(db)
-        rep = apply_to_main(db, rows)
+        rep = apply_to_main(db, rows, include_unreviewed)
         db.commit()
         if db.execute("pragma quick_check").fetchone()[0] != "ok" or db.execute("pragma foreign_key_check").fetchall():
             raise Fail("copy failed quick_check / foreign_key_check")
@@ -336,7 +349,8 @@ def pull_into(main, rows, dry_run=False):
                 continue
             if n - before.get(tb, 0) != expect.get(tb, 0):
                 raise Fail(f"table {tb} changed unexpectedly ({before.get(tb)} -> {n})")
-        missing = [r["action_id"] for r in rows["ac_action"] if not str(r["status"]).startswith("SAME_AS")
+        held = set() if include_unreviewed else held_actions(rows)
+        missing = [r["action_id"] for r in rows["ac_action"] if not str(r["status"]).startswith("SAME_AS") and r["action_id"] not in held
                    and not db.execute("select 1 from corporate_action where action_id=?", (r["action_id"],)).fetchone()]
         if missing:
             raise Fail(f"{len(missing)} captured actions missing after the pull")
@@ -355,7 +369,7 @@ def cmd_pull_actions(t, a):
     stamp = t.query("select max(updated_at) from (select updated_at from ac_announcement union all select updated_at from ac_action "
                     "union all select updated_at from ac_link union all select updated_at from ac_value)")[0][0] or ""
     rows = read_rows(t)
-    rep, backup = pull_into(a.main, rows, a.dry_run)
+    rep, backup = pull_into(a.main, rows, a.dry_run, a.include_unreviewed)
     conflicts = rep.pop("value_conflicts")
     print("pull:", json.dumps(rep))
     for c in conflicts:
@@ -407,6 +421,7 @@ def main():
     ap.add_argument("--main", help="local main database (init, pull-actions)")
     ap.add_argument("--root", help="data directory (db/, raw_api/, logs/)")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--include-unreviewed", action="store_true", help="pull-actions: also pull new actions still waiting for review")
     a = ap.parse_args()
     try:
         t = Turso()
