@@ -198,7 +198,7 @@ def check_detail(fmt, aid, d, ticker=None, company_id=None):
         sym = (b.get("symbol") or "").strip().split(".")[0]
         if b.get("id") not in (None, aid) or (ticker and sym and sym != ticker) or (ticker and not sym):
             return "COMPANY_MISMATCH", None, None
-        return "FETCHED", b, b.get("dType") or ("General" if d.get("general") else None)
+        return "FETCHED", b, b.get("dType") or "General"     # getGeneralAnnouncementById records carry no dType
     info = d.get("infoAnnouncement")
     if not info:
         return "NO_DETAIL", None, None

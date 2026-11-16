@@ -103,7 +103,7 @@ class Builder:
     def load(self):
         db = self.db
         db.row_factory = None
-        self.ca_pushed_at = self.meta("inputs_corporate_action_pushed_at", "")
+        self.ca_pushed_at = self.meta("local:inputs_corporate_action_pushed_at", "")
         self.tickers = {cid: t for cid, t in db.execute("select company_id, ticker from company")}
         self.secs = {}
         for sid, cid, cls, status in db.execute("select security_id, company_id, share_class, listing_status from security order by listing_status desc, security_id"):
@@ -179,7 +179,7 @@ class Builder:
         new_id = self.next_value
         self.next_value += 1
         if cur:
-            self.db.execute("update ac_value set status='SUPERSEDED', superseded_by=?, updated_at=? where value_id=?", (new_id, self.run, cur[0]))
+            self.db.execute("update ac_value set status='SUPERSEDED', superseded_by=?, updated_at=?, pulled_at=NULL where value_id=?", (new_id, self.run, cur[0]))
         elif old is not None and a["origin"] == "main":
             # main's value, recorded once so the history shows what it replaced
             self.db.execute("insert into ac_value values (?,?,?,?,?,?,?,?,?,?,?)",
@@ -198,7 +198,7 @@ class Builder:
 
     def sync_action_row(self, aid):
         a = self.actions[aid]
-        sets = ",".join(f"{c}=?" for c in ACTION_COLS[1:]) + ", status=?, updated_at=?"
+        sets = ",".join(f"{c}=?" for c in ACTION_COLS[1:]) + ", status=?, updated_at=?, pulled_at=NULL"
         self.db.execute(f"update ac_action set {sets} where action_id=?", [a.get(c) for c in ACTION_COLS[1:]] + [a.get("status") or "ACTIVE", self.run, aid])
 
     def link(self, aid, pk, evidence):
