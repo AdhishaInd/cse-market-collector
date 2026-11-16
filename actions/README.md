@@ -100,7 +100,7 @@ Credentials: `set -a; . ~/.config/cse-events.env; set +a` (`TURSO_EVENTS_URL`, `
 are the repository secrets).
 
 ```
-MAIN=/home/adhisha/stocks/cse_financials/db/cse_financials.db
+MAIN=<cse_financials>/db/cse_financials.db                 # the local main database
 python3 -I actions/pipeline/actions_sync.py init --main $MAIN          # tables, id floor, seed main's newer rows (safe to rerun)
 python3 -I actions/pipeline/actions_sync.py pull-actions --main $MAIN [--dry-run]   # captured rows into main: copy -> check -> swap
 python3 -I actions/pipeline/actions_sync.py needs-reading               # letters to read (prints symbols: local only)
@@ -123,8 +123,8 @@ Main is kept as `db/backup_actions_<time>.db` (hard link, the 7 newest kept). Th
 ### After a pull: refresh factors locally
 
 ```
-cd /home/adhisha/stocks/cse_financials
-python3 -I /home/adhisha/stocks/cse-market-archive/events/pipeline/events_sync.py push-inputs --main db/cse_financials.db
+cd <cse_financials>
+python3 -I <this repository>/events/pipeline/events_sync.py push-inputs --main db/cse_financials.db
 .venv/bin/python -I scripts/apply_actions_round3.py --asof YYYY-MM-DD \
     --prepare work/actions4/review/prepare_new_rights.py --prepare work/actions5/prepare_round6.py           # staging + checks
 .venv/bin/python -I scripts/apply_actions_round3.py --asof YYYY-MM-DD \
