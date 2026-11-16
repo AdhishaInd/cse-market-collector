@@ -161,7 +161,8 @@ FOLLOW_UP = [("postponed", r"postpon|deferr|resched|suspension of the|withdraw|c
              ("dates", r"\bdates?\b"),
              ("listing", r"listing of (?:the )?(?:new )?shares|notification on the listing"),
              ("subscription", r"subscription|subscribed|provisional (?:letters? of )?allotment|basis of allotment"),
-             ("further", r"further (?:to|announcement)|in continuation|subsequent")]
+             ("further", r"further (?:to|announcement)|in continuation|subsequent|offer document")]
+DATED_REMARK = re.compile(r"(?:^|\s)dates?$|\bdates of\b|\bwith dates\b")
 
 
 def follow_up_type(category_norm, remarks=""):
@@ -176,7 +177,14 @@ def follow_up_type(category_norm, remarks=""):
     for name, rx in FOLLOW_UP:
         if name != "dates" and re.search(rx, r):
             return name
+    if DATED_REMARK.search(r):         # 'Repurchase of Shares - Dates', 'Rights Issue 2026 Dates', 'Dates of Rights Issue'
+        return "dates"
     return None
+
+
+def prints_dates(base):
+    """A general (free-form) notice that carries event dates in its structured fields acts as a dates notice."""
+    return any((base or {}).get(k) for k in ("xr", "xd", "xc", "recordDate", "allotment", "tradingCommencement", "subDivisionBasedOnShareholdingsAsAt"))
 
 
 def names_both_classes(*texts):
@@ -257,10 +265,11 @@ def values(kind, base=None, dtype=None, z=None, body=None):
             if not v and not n:
                 row("VOTING", level="TITLE_ONLY")
         elif kind == "SCRIP_DIVIDEND":
-            common.update(financial_year=clean_text(b.get("financialYear")), ex_date=day(b.get("xd")) or day(z.get("xd")))
+            common.update(financial_year=clean_text(b.get("financialYear")), ex_date=day(b.get("xd")) or day(z.get("xd")),
+                          payment_date=day(b.get("payment")) or day(z.get("paymentDate")))
             if b.get("votingPropotion") or b.get("votingNumSharesIssued"):
                 row("VOTING", ratio_text=clean_text(b.get("votingPropotion")), shares_issued=number(b.get("votingNumSharesIssued")),
-                    issue_price=number(b.get("votingConsideration")), level="STRUCTURED")
+                    issue_price=number(b.get("votingConsideration")), level="STRUCTURED", _total=number(b.get("reservesToBeCapitalized")))
             if b.get("nonVotingPropotion") or b.get("nonVotingNumSharesIssued"):
                 row("NON_VOTING", ratio_text=clean_text(b.get("nonVotingPropotion")), shares_issued=number(b.get("nonVotingNumSharesIssued")),
                     issue_price=number(b.get("nonVotingConsideration")), level="STRUCTURED")
@@ -347,6 +356,15 @@ def consideration_is_total(a):
     return bool(p and (p > 100000 or (n and p * n > 1e12)))
 
 
+def price_inconsistent(a):
+    """Scrip dividends: the 'consideration' field is sometimes the price per new share (KZOO 2026: 8.70 x 4,553,230
+    = the Rs 39.6 Mn capitalised) and sometimes the dividend per existing share (MFPE 2026: 0.10). When the notice also
+    prints the amount capitalised and price x new shares is not within a factor of 2 of it, the price is not a price.
+    (A miss of 10-20% is normal: the share count is an 'up to' figure and fractions are paid in cash - RAL 2026.)"""
+    p, n, tot = a.get("issue_price"), a.get("shares_issued"), a.get("_total")
+    return bool(p and n and tot and not 0.5 <= p * n / tot <= 2)
+
+
 def terms_disagree(kind, a, b):
     """True when both sides print a term and the terms differ (per share amount, ratio, or price)."""
     if kind == "CASH_DIVIDEND":
@@ -359,6 +377,26 @@ def terms_disagree(kind, a, b):
     if kind == "RIGHTS_ISSUE" and pa and pb and abs(pa - pb) > 1e-9:
         return True
     return False
+
+
+def same_terms(kind, a, b):
+    """A restatement: at least two of ratio, price and number of new shares printed on both sides, and all equal.
+    Only for share issues (rights, scrip, bonus); cash dividends of equal amounts recur and prove nothing."""
+    if kind not in ("RIGHTS_ISSUE", "SCRIP_DIVIDEND", "CAPITALISATION"):
+        return False
+    n = 0
+    ra, rb = ratio(a.get("ratio_text")), ratio(b.get("ratio_text"))
+    if ra and rb:
+        if abs(ra[0] / ra[1] - rb[0] / rb[1]) > 1e-9:
+            return False
+        n += 1
+    for f in ("issue_price", "shares_issued"):
+        x, y = number(a.get(f)), number(b.get(f))
+        if x and y:
+            if abs(x - y) > 1e-9:
+                return False
+            n += 1
+    return n >= 2
 
 
 def is_dated(a):

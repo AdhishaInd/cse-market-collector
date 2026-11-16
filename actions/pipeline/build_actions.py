@@ -48,6 +48,7 @@ SCHEMA = [
 ]
 OPEN_WINDOW_DAYS = 500
 DUP_WINDOW_DAYS = 365
+RECENT_WINDOW_DAYS = 180
 TYPED = {"per_share": float, "issue_price": float, "shares_before": int, "shares_after": int, "shares_issued": int}
 
 
@@ -283,6 +284,20 @@ class Builder:
                 return open_[0]["action_id"], "only_open"
             if len(open_) > 1:
                 return None, f"{len(open_)} open actions of this kind could match"
+            if follow_up in ("listing", "subscription", "further"):
+                # these follow the event itself (listing of the new shares, level of subscription, letters of
+                # allotment, offer document): the action is usually dated by now
+                near = [c for c in cands if on and c["announced_on"] and (dt.date.fromisoformat(on) - dt.date.fromisoformat(c["announced_on"])).days <= RECENT_WINDOW_DAYS
+                        and not N.terms_disagree(kind, a, c)]
+                if len(near) == 1:
+                    return near[0]["action_id"], "only_recent"
+                if len(near) > 1:
+                    return None, f"{len(near)} recent actions of this kind could match"
+        near = [c for c in cands if on and c["announced_on"] and (dt.date.fromisoformat(on) - dt.date.fromisoformat(c["announced_on"])).days <= DUP_WINDOW_DAYS
+                and N.same_terms(kind, a, c)]
+        if len(near) == 1:
+            return near[0]["action_id"], "same_terms"
+        if follow_up:
             return None, "no open action of this kind"
         return None, None
 
@@ -306,6 +321,9 @@ class Builder:
         follow = N.follow_up_type(n["normalized_category"], " ".join(x or "" for x in (n["remarks"], (base or {}).get("title"))))
         if how == "listing" and not follow:
             follow = "listing"
+        weak = False
+        if not follow and dtype == "General" and N.prints_dates(base):
+            follow, weak = "dates", True       # a free-form notice that prints the dates acts as the dates notice
         both = N.names_both_classes(n["category_raw"], n["remarks"], (base or {}).get("title"))
         docs = N.documents(detail)
         reading = self.reviewed.get(int(n["cse_announcement_id"])) if n["cse_format"] == "NEW" else None
@@ -332,9 +350,14 @@ class Builder:
                     self.queue("needs-review", f"total-consideration:{pk}:{sid}", pk, None,
                                "printed consideration looks like a total, not a price per share: price not stored")
                     a.pop("issue_price")
-                self.apply_row(kind, cid, sid, n, pk, a, base, follow, text, docs)
+                elif a.get("issue_price") and N.price_inconsistent(a):
+                    self.queue("needs-review", f"price-inconsistent:{pk}:{sid}", pk, None,
+                               "printed consideration x new shares does not match the amount capitalised: price not stored")
+                    a.pop("issue_price")
+                a.pop("_total", None)
+                self.apply_row(kind, cid, sid, n, pk, a, base, follow, text, docs, weak)
 
-    def apply_row(self, kind, cid, sid, n, pk, a, base, follow, text, docs):
+    def apply_row(self, kind, cid, sid, n, pk, a, base, follow, text, docs, weak=False):
         src = "reviewed" if a.get("reviewed") else ("structured" if a.get("level") == "STRUCTURED" else "body" if a.get("level") == "BODY_TEXT" else "title")
         aid, why = self.find(kind, sid, n, pk, a, base, follow, text)
         if aid is None:
@@ -343,16 +366,17 @@ class Builder:
                 self.bump("unlinked_postponement")
                 return
             aid = self.new_action(cid, sid, kind, n, a, pk, src)
-            if follow:
+            if follow and not weak:
                 self.queue("needs-review", f"unlinked:{pk}:{sid}:{kind}", pk, aid,
                            f"{follow} notice links to no earlier action ({why}); a new action was created")
             else:
-                open_ = [c for c in self.candidates(sid, kind, n["announced_on"], pk)
-                         if c["action_id"] != aid and not N.is_dated(c) and n["announced_on"] and c["announced_on"]
-                         and (dt.date.fromisoformat(n["announced_on"]) - dt.date.fromisoformat(c["announced_on"])).days <= DUP_WINDOW_DAYS]
-                if open_:
+                age = lambda c: (dt.date.fromisoformat(n["announced_on"]) - dt.date.fromisoformat(c["announced_on"])).days
+                near = [c for c in self.candidates(sid, kind, n["announced_on"], pk)
+                        if c["action_id"] != aid and n["announced_on"] and c["announced_on"]
+                        and ((not N.is_dated(c) and age(c) <= DUP_WINDOW_DAYS) or (kind != "CASH_DIVIDEND" and age(c) <= RECENT_WINDOW_DAYS))]
+                if near:
                     self.queue("needs-review", f"possible-duplicate:{pk}:{sid}:{kind}", pk, aid,
-                               "initial notice while open action(s) " + ",".join(str(c["action_id"]) for c in open_) + " of the same kind exist")
+                               "new action while action(s) " + ",".join(str(c["action_id"]) for c in near) + " of the same kind are open or recent")
             self.check_reading(kind, aid, pk, n, a, follow, docs)
             return
         self.link(aid, pk, why)
@@ -414,7 +438,7 @@ class Builder:
         if not docs:
             self.queue("needs-review", f"no-document:{pk}", pk, aid, "dates notice prints no date and has no attached document")
             return
-        self.queue("needs-reading", f"reading:{pk}", pk, aid, "dates only in the attached letter", docs)
+        self.queue("needs-reading", f"reading:{pk}", pk, aid, f"{follow} notice: its values are only in the attached letter", docs)
 
     # ---- reviewed readings / decisions arriving after the notice ---------------------------------------------------
     def apply_late_readings(self, detail_of):
