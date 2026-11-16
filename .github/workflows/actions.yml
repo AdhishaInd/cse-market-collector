@@ -109,7 +109,8 @@ jobs:
           else gh issue create --title "Corporate-action capture failed $(TZ=Asia/Colombo date +%F)" --label actions-failure --body "$BODY"; fi
 
       - name: Close failure issue after recovery
-        if: success()
+        # not on a skipped retry: after a CSE refusal the retry is skipped and nothing has recovered yet
+        if: success() && steps.gate.outputs.skip != '1'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
