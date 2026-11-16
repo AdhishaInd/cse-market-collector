@@ -1,0 +1,4 @@
+{
+ "_doc": "Decisions on needs-review items (see actions/README.md, 'Queues'). Key: the item key printed by `actions_sync.py needs-review`. decision 'keep': the new action is a separate event. decision 'same_as' with action_id N: the new action is the same event as action N (only while the new action has not been pulled into main); its links and values move to N.",
+ "_example": {"decision": "same_as", "action_id": 4092, "note": "offer document of the same repurchase", "reviewer": "name", "on": "YYYY-MM-DD"}
+}

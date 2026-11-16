@@ -1,0 +1,4 @@
+{
+ "_doc": "Values read by a person or agent from the PDF letter of a notice in the needs-reading queue (see actions/README.md, 'Queues'). Key: the CSE announcement id. kind: the action kind the values belong to. values: only what the letter prints (ISO dates; ratio as printed; price in rupees). An entry with no values and a note closes the item without changing anything.",
+ "_example": {"kind": "RIGHTS_ISSUE", "values": {"ex_date": "2026-12-03", "record_date": "2026-12-04", "effective_date": "2026-12-17"}, "read_from": "<document url> page 1", "reader": "agent name", "read_on": "YYYY-MM-DD", "note": ""}
+}

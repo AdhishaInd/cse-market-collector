@@ -125,7 +125,38 @@ def load_reviewed():
     r = json.loads(p.read_text()) if p.exists() else {}
     q = REVIEWED / "review_decisions.json"
     d = json.loads(q.read_text()) if q.exists() else {}
-    return {int(k): v for k, v in r.items() if not k.startswith("_")}, {k: v for k, v in d.items() if not k.startswith("_")}
+    r = {int(k): v for k, v in r.items() if not k.startswith("_")}
+    d = {k: v for k, v in d.items() if not k.startswith("_")}
+    probs = check_reviewed(r, d)
+    if probs:
+        raise Fail(1, f"{len(probs)} problems in actions/reviewed/*.json (run refresh_actions.py --check-reviewed locally)")
+    return r, d
+
+
+def check_reviewed(readings, decisions):
+    """Shape checks of the reviewed files: kinds, ISO dates in date fields, positive numbers, a source for every value."""
+    out = []
+    for aid, v in readings.items():
+        vals = v.get("values") or {}
+        if v.get("kind") not in N.ACTIONS:
+            out.append(f"reading {aid}: kind must be one of {N.ACTIONS}")
+        if not v.get("read_from"):
+            out.append(f"reading {aid}: read_from (document + page) missing")
+        if not vals and not (v.get("note") or "").strip():
+            out.append(f"reading {aid}: no values, so a note is required")
+        for f, x in vals.items():
+            if f not in N.FIELDS:
+                out.append(f"reading {aid}: unknown field {f}")
+            elif f in N.DATE_FIELDS and N.day(x) != x:
+                out.append(f"reading {aid}: {f} must be an ISO date")
+            elif f in ("per_share", "issue_price", "shares_issued", "shares_before", "shares_after") and not (N.number(x) and N.number(x) > 0):
+                out.append(f"reading {aid}: {f} must be a positive number")
+    for k, v in decisions.items():
+        if v.get("decision") not in ("keep", "same_as"):
+            out.append(f"decision {k}: decision must be keep or same_as")
+        if v.get("decision") == "same_as" and not isinstance(v.get("action_id"), int):
+            out.append(f"decision {k}: same_as needs an integer action_id")
+    return out
 
 
 def build(root, run_at, today, client, allow_large, reviewed=None, decisions=None):
@@ -276,7 +307,14 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="everything except the swap")
     ap.add_argument("--max-requests", type=int, default=40)
     ap.add_argument("--allow-large-change", action="store_true")
+    ap.add_argument("--check-reviewed", action="store_true", help="only check actions/reviewed/*.json and exit")
     a = ap.parse_args()
+    if a.check_reviewed:
+        r = json.loads((REVIEWED / "notice_readings.json").read_text())
+        d = json.loads((REVIEWED / "review_decisions.json").read_text())
+        probs = check_reviewed({int(k): v for k, v in r.items() if not k.startswith("_")}, {k: v for k, v in d.items() if not k.startswith("_")})
+        print("\n".join(probs) or "reviewed files OK")
+        sys.exit(1 if probs else 0)
     main_db, work, logdir = paths(ROOT)
     logdir.mkdir(parents=True, exist_ok=True)
     lock = open(logdir / ".lock", "w")  # noqa: SIM115

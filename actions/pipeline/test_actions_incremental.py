@@ -118,6 +118,7 @@ class Notices(unittest.TestCase):
         self.assertEqual(N.follow_up_type("rights issue", "Further to the announcement dated 23rd July 2026"), "further")
         self.assertEqual(N.follow_up_type("rights issue", "Level of Subscription - Rights Issue"), "subscription")
         self.assertEqual(N.follow_up_type("repurchase of shares", "Ceylon X PLC - Repurchase of Shares - Dates"), "dates")
+        self.assertEqual(N.follow_up_type("rights issue", "Rights Issue - Allotment of Shares"), "subscription")
         self.assertIsNone(N.follow_up_type("cash dividend dates to be notified"))
         self.assertIsNone(N.follow_up_type("rights issue", "Rights Issue - 2026"))
 

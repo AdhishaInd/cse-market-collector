@@ -160,7 +160,7 @@ FOLLOW_UP = [("postponed", r"postpon|deferr|resched|suspension of the|withdraw|c
              ("amended", r"amend|ammend|revis|addendum|change of date|correction|errata"),
              ("dates", r"\bdates?\b"),
              ("listing", r"listing of (?:the )?(?:new )?shares|notification on the listing"),
-             ("subscription", r"subscription|subscribed|provisional (?:letters? of )?allotment|basis of allotment"),
+             ("subscription", r"subscription|subscribed|provisional (?:letters? of )?allotment|basis of allotment|allotment of (?:the )?(?:new |rights )?shares"),
              ("further", r"further (?:to|announcement)|in continuation|subsequent|offer document")]
 DATED_REMARK = re.compile(r"(?:^|\s)dates?$|\bdates of\b|\bwith dates\b")
 
