@@ -262,6 +262,11 @@ def check_reviewed():
     cal = rights_announcements()
     problems = []
     for aid, v in load_reviewed().items():
+        if v.get("renunciation") is None and v.get("acceptance") is None:
+            # the letter does not state the dates: allowed, but the reader must say so and name the document
+            if not (v.get("note") or "").strip() or not v.get("read_from"):
+                problems.append(f"{aid}: no dates recorded, so note and read_from are required")
+            continue
         try:
             ren, acc = dt.date.fromisoformat(v["renunciation"]), dt.date.fromisoformat(v["acceptance"])
         except Exception as e:

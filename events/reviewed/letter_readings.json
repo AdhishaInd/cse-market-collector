@@ -55,5 +55,117 @@
   "reader": "Claude (page image)",
   "read_on": "2026-11-14",
   "note": "letter's XR 2026-12-03, record 2026-12-04, trading start 2026-12-17 match the calendar"
+ },
+ "32909": {
+  "renunciation": null,
+  "acceptance": null,
+  "read_from": "https://cdn.cse.lk/cmt/announcement_portal_prod/DOCK amened_30165994075526920.pdf page 1",
+  "reader": "Claude Fable (page image)",
+  "read_on": "2026-11-16",
+  "note": "not a timetable letter: dated 28 Aug 2025, 'Announcement - Postponement of the Rights Issue of the Company'; it states no dates (revised timelines to be notified after regulatory approvals). The calendar row has no dates either. The later DOCK timetable is announcement 34271"
+ },
+ "33477": {
+  "renunciation": "2025-11-10",
+  "acceptance": "2025-11-13",
+  "read_from": "https://cdn.cse.lk/cmt/announcement_portal_prod/lcl366-09242025142031_32494949127701174.pdf page 1",
+  "reader": "Claude Fable (page image)",
+  "read_on": "2026-11-16",
+  "note": "letter's XR 2025-10-16, record 2025-10-17, dispatch 2025-10-27, trading start 2025-10-31 match the calendar"
+ },
+ "33963": {
+  "renunciation": "2025-12-03",
+  "acceptance": "2025-12-09",
+  "read_from": "https://cdn.cse.lk/cmt/announcement_portal_prod/EBCPLC - Disclosure dated 17.10.2025_34489412446584585.pdf page 1",
+  "reader": "Claude Fable (page image)",
+  "read_on": "2026-11-16",
+  "note": "letter's XR 2025-11-12, record 2025-11-13, dispatch 2025-11-20, trading start 2025-11-26 match the calendar"
+ },
+ "34271": {
+  "renunciation": "2025-12-29",
+  "acceptance": "2026-01-02",
+  "read_from": "https://cdn.cse.lk/cmt/announcement_portal_prod/07Nov2025-CSE Announcement (RI dates)-F_36298780603554308.pdf page 1",
+  "reader": "Claude Fable (page image)",
+  "read_on": "2026-11-16",
+  "note": "letter's XR 2025-12-05, record 2025-12-08, dispatch 2025-12-15, trading start 2025-12-19 match the calendar. The letter adds that the dates of items 4 to 7 (dispatch, trading start, renunciation, acceptance) are subject to SEC approval of a further extension to the deferment of the trading suspension; no revision is stated in this letter"
+ },
+ "35051": {
+  "renunciation": "2026-02-11",
+  "acceptance": "2026-02-16",
+  "read_from": "https://cdn.cse.lk/cmt/announcement_portal_prod/CSE Announcement (Rights Issue Dates)_40807228884742259.pdf page 1",
+  "reader": "Claude Fable (page image)",
+  "read_on": "2026-11-16",
+  "note": "letter's XR 2026-01-20, record 2026-01-21, dispatch 2026-01-28, trading start 2026-02-03 match the calendar"
+ },
+ "35245": {
+  "renunciation": "2026-02-26",
+  "acceptance": "2026-03-04",
+  "read_from": "https://cdn.cse.lk/cmt/announcement_portal_prod/RA-20 to CSE-Rights Issue of shares-25 (12.01.26)_42069353788251595.pdf page 1",
+  "reader": "Claude Fable (page image)",
+  "read_on": "2026-11-16",
+  "note": "letter's XR 2026-02-05, record 2026-02-06, dispatch 2026-02-13, trading start 2026-02-19 match the calendar"
+ },
+ "35419": {
+  "renunciation": "2026-03-17",
+  "acceptance": "2026-03-20",
+  "read_from": "https://cdn.cse.lk/cmt/announcement_portal_prod/23.01.2026 - Rights issue 2026_42955078816476031.pdf page 1",
+  "reader": "Claude Fable (page image)",
+  "read_on": "2026-11-16",
+  "note": "letter's XR 2026-02-23, record 2026-02-24, dispatch 2026-03-04, trading start 2026-03-10 match the calendar"
+ },
+ "35715": {
+  "renunciation": "2026-03-20",
+  "acceptance": "2026-03-26",
+  "read_from": "https://cdn.cse.lk/cmt/announcement_portal_prod/CLE_RI_Disclosure_13022026_20260213_0001_44746328864154378.pdf page 1",
+  "reader": "Claude Fable (page image)",
+  "read_on": "2026-11-16",
+  "note": "letter's XR 2026-03-04, record 2026-03-05, dispatch 2026-03-10, trading start 2026-03-16 match the calendar. Low-resolution black-and-white scan, digits legible at 240 dpi"
+ },
+ "35920": {
+  "renunciation": "2026-04-10",
+  "acceptance": "2026-04-17",
+  "read_from": "https://cdn.cse.lk/cmt/announcement_portal_prod/Hayleys PLC - Rights Issue (Dates) - 26.02.2026 sgd_45891024838432502.pdf page 1",
+  "reader": "Claude Fable (page image)",
+  "read_on": "2026-11-16",
+  "note": "letter's XR 2026-03-18, record 2026-03-19, dispatch 2026-03-26, trading start 2026-04-02 match the calendar. The renunciation row is printed 'Late date of Renunciation of Rights to the CDS' (typo for Last)"
+ },
+ "35997": {
+  "renunciation": "2026-04-23",
+  "acceptance": "2026-04-28",
+  "read_from": "https://cdn.cse.lk/cmt/announcement_portal_prod/Announcement to CSE_46311144186899941.pdf page 1",
+  "reader": "Claude Fable (page image)",
+  "read_on": "2026-11-16",
+  "note": "letter's XR 2026-03-27, record 2026-03-30, dispatch 2026-04-08, trading start 2026-04-16 match the calendar"
+ },
+ "36199": {
+  "renunciation": "2026-05-14",
+  "acceptance": "2026-05-19",
+  "read_from": "https://cdn.cse.lk/cmt/announcement_portal_prod/CSE Announcement - dates_47446986353691013.pdf page 1",
+  "reader": "Claude Fable (page image)",
+  "read_on": "2026-11-16",
+  "note": "letter's XR 2026-04-22, record 2026-04-23, dispatch 2026-04-30, trading start 2026-05-07 match the calendar"
+ },
+ "36348": {
+  "renunciation": "2026-05-11",
+  "acceptance": "2026-05-14",
+  "read_from": "https://cdn.cse.lk/cmt/announcement_portal_prod/Announcement - Dates to CSE_20260326_0001_48310802978913901.pdf page 1",
+  "reader": "Claude Fable (page image)",
+  "read_on": "2026-11-16",
+  "note": "letter's XR 2026-04-17, record 2026-04-20, dispatch 2026-04-27, trading start 2026-05-04 match the calendar"
+ },
+ "36994": {
+  "renunciation": "2026-06-18",
+  "acceptance": "2026-06-23",
+  "read_from": "https://cdn.cse.lk/cmt/announcement_portal_prod/Rights Issue Dates - 2026_1626983250008879.pdf page 1",
+  "reader": "Claude Fable (page image)",
+  "read_on": "2026-11-16",
+  "note": "letter's XR 2026-06-02, record 2026-06-03, letter of allotment available 2026-06-05, trading start 2026-06-11 match the calendar"
+ },
+ "37302": {
+  "renunciation": "2026-07-28",
+  "acceptance": "2026-08-03",
+  "read_from": "https://cdn.cse.lk/cmt/announcement_portal_prod/2026.06.03-CSE Letter_3359355486620907.pdf page 1",
+  "reader": "Claude Fable (page image)",
+  "read_on": "2026-11-16",
+  "note": "letter's XR 2026-07-07, record 2026-07-08, dispatch 2026-07-15, trading start 2026-07-21 match the calendar. The acceptance row is printed 'Last Date of Acceptance for Payments for Rights'"
  }
 }
