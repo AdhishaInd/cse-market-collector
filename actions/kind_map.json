@@ -1,0 +1,490 @@
+{
+ "_doc": "Normalized CSE announcement category -> corporate-action kinds. Copied from the local main database's announcement_kind_map (action kinds only) on 2026-11-17. Categories not listed here are classified by the rules in notices.kinds_for (counted as category_by_rule in the run report).",
+ "map": {
+  "amended cash and scrip dividend dates": [
+   "CASH_DIVIDEND",
+   "SCRIP_DIVIDEND"
+  ],
+  "amended dividend announcement": [
+   "CASH_DIVIDEND"
+  ],
+  "amended dividend announcement amended dates": [
+   "CASH_DIVIDEND"
+  ],
+  "amended dividend announcement financial year": [
+   "CASH_DIVIDEND"
+  ],
+  "announcement of rights issue and warrants": [
+   "RIGHTS_ISSUE"
+  ],
+  "announcement re cash and scrip dividend": [
+   "CASH_DIVIDEND",
+   "SCRIP_DIVIDEND"
+  ],
+  "annual general meeting and scrip dividend dates": [
+   "SCRIP_DIVIDEND"
+  ],
+  "browns beach hotels further announcement re rights issue": [
+   "RIGHTS_ISSUE"
+  ],
+  "capitalisation of reserves": [
+   "CAPITALISATION"
+  ],
+  "capitalisation of reserves dates": [
+   "CAPITALISATION"
+  ],
+  "capitalisation of reserves notification on the listing of shares": [
+   "CAPITALISATION"
+  ],
+  "capitalization of reserves": [
+   "CAPITALISATION"
+  ],
+  "capitalization of reserves amended dates": [
+   "CAPITALISATION"
+  ],
+  "capitalization of reserves amended proportion": [
+   "CAPITALISATION"
+  ],
+  "capitalization of reserves and dividend": [
+   "CAPITALISATION",
+   "CASH_DIVIDEND"
+  ],
+  "capitalization of reserves and sub division of shares": [
+   "CAPITALISATION",
+   "SUB_DIVISION"
+  ],
+  "capitalization of reserves dates": [
+   "CAPITALISATION"
+  ],
+  "capitalization of reserves dates voting and non voting": [
+   "CAPITALISATION"
+  ],
+  "capitalization of reserves notification": [
+   "CAPITALISATION"
+  ],
+  "capitalization of reserves notification on listing of shares": [
+   "CAPITALISATION"
+  ],
+  "capitalization of reserves notification on the listing of shares": [
+   "CAPITALISATION"
+  ],
+  "capitalization of reserves voting and non voting": [
+   "CAPITALISATION"
+  ],
+  "cash and scrip dividend": [
+   "CASH_DIVIDEND",
+   "SCRIP_DIVIDEND"
+  ],
+  "cash and scrip dividend announcement": [
+   "CASH_DIVIDEND",
+   "SCRIP_DIVIDEND"
+  ],
+  "cash and scrip dividend announcement dates": [
+   "CASH_DIVIDEND",
+   "SCRIP_DIVIDEND"
+  ],
+  "cash and scrip dividend announcements": [
+   "CASH_DIVIDEND",
+   "SCRIP_DIVIDEND"
+  ],
+  "cash and scrip dividend dates": [
+   "CASH_DIVIDEND",
+   "SCRIP_DIVIDEND"
+  ],
+  "cash and scrip dividends": [
+   "CASH_DIVIDEND",
+   "SCRIP_DIVIDEND"
+  ],
+  "cash and scrip dividends announcement": [
+   "CASH_DIVIDEND",
+   "SCRIP_DIVIDEND"
+  ],
+  "cash dividend": [
+   "CASH_DIVIDEND"
+  ],
+  "cash dividend dates to be notified": [
+   "CASH_DIVIDEND"
+  ],
+  "ceylon hospitals plc durdans dividend announcement": [
+   "CASH_DIVIDEND"
+  ],
+  "ceylon leather products plc repurchase of shares": [
+   "REPURCHASE"
+  ],
+  "consolidation of shares": [
+   "CONSOLIDATION"
+  ],
+  "consolidation of shares and rights issue": [
+   "CONSOLIDATION",
+   "RIGHTS_ISSUE"
+  ],
+  "consolidation of shares and rights issue dates": [
+   "CONSOLIDATION",
+   "RIGHTS_ISSUE"
+  ],
+  "corporate disclosure re rights issue": [
+   "RIGHTS_ISSUE"
+  ],
+  "disclosure re share repurchase by ndb capital holdings plc": [
+   "REPURCHASE"
+  ],
+  "dividend announcement": [
+   "CASH_DIVIDEND"
+  ],
+  "dividend announcement amended": [
+   "CASH_DIVIDEND"
+  ],
+  "dividend announcement amended dates": [
+   "CASH_DIVIDEND"
+  ],
+  "dividend announcement amended financial year": [
+   "CASH_DIVIDEND"
+  ],
+  "dividend announcement amended payment date": [
+   "CASH_DIVIDEND"
+  ],
+  "dividend announcement ammended dates": [
+   "CASH_DIVIDEND"
+  ],
+  "dividend announcement dates": [
+   "CASH_DIVIDEND"
+  ],
+  "dividend announcement final and final": [
+   "CASH_DIVIDEND"
+  ],
+  "dividend announcement on the enhanced capital post the rights issue": [
+   "CASH_DIVIDEND"
+  ],
+  "dividend announcement with amended dates": [
+   "CASH_DIVIDEND"
+  ],
+  "dividend announcements": [
+   "CASH_DIVIDEND"
+  ],
+  "dividend announcements amended dates": [
+   "CASH_DIVIDEND"
+  ],
+  "dividend announcements cash and scrip": [
+   "CASH_DIVIDEND",
+   "SCRIP_DIVIDEND"
+  ],
+  "dividend announcements cash and scrip cdb": [
+   "CASH_DIVIDEND",
+   "SCRIP_DIVIDEND"
+  ],
+  "dividend announcements interim and final": [
+   "CASH_DIVIDEND"
+  ],
+  "dividend dates": [
+   "CASH_DIVIDEND"
+  ],
+  "dividend dates amended": [
+   "CASH_DIVIDEND"
+  ],
+  "final dividend for the financial year ended 31 12 2011": [
+   "CASH_DIVIDEND"
+  ],
+  "first and final dividend": [
+   "CASH_DIVIDEND"
+  ],
+  "further announcement re capitalization of reserves": [
+   "CAPITALISATION"
+  ],
+  "further announcement re cash and scrip dividend": [
+   "CASH_DIVIDEND",
+   "SCRIP_DIVIDEND"
+  ],
+  "further announcement re private placement": [
+   "PRIVATE_PLACEMENT"
+  ],
+  "further announcement re private placement of shares": [
+   "PRIVATE_PLACEMENT"
+  ],
+  "further announcement re repurchase of shares and consolidation of shares": [
+   "CONSOLIDATION",
+   "REPURCHASE"
+  ],
+  "further announcement re rights issue": [
+   "RIGHTS_ISSUE"
+  ],
+  "further announcement re rights issue of shares": [
+   "RIGHTS_ISSUE"
+  ],
+  "further announcement re scrip dividend": [
+   "SCRIP_DIVIDEND"
+  ],
+  "further announcement re sub division of shares": [
+   "SUB_DIVISION"
+  ],
+  "interim dividend": [
+   "CASH_DIVIDEND"
+  ],
+  "issue of shares by private placement": [
+   "PRIVATE_PLACEMENT"
+  ],
+  "issue of shares by way of a private placement": [
+   "PRIVATE_PLACEMENT"
+  ],
+  "issue of shares by way of capitalization of reserves": [
+   "CAPITALISATION"
+  ],
+  "national development bank plc scrip dividend": [
+   "SCRIP_DIVIDEND"
+  ],
+  "notification of listing of shares of scrip dividend": [
+   "SCRIP_DIVIDEND"
+  ],
+  "notification on repurchase of shares": [
+   "REPURCHASE"
+  ],
+  "notification on the listing of shares capitalization of reserves": [
+   "CAPITALISATION"
+  ],
+  "notification on the listing of shares private placement": [
+   "PRIVATE_PLACEMENT"
+  ],
+  "notification on the listing of shares private placement of ordinary shares": [
+   "PRIVATE_PLACEMENT"
+  ],
+  "notification on the listing of shares private placement of ordinary voting shares": [
+   "PRIVATE_PLACEMENT"
+  ],
+  "notification on the listing of shares rights issue": [
+   "RIGHTS_ISSUE"
+  ],
+  "notification on the listing of shares scrip dividend": [
+   "SCRIP_DIVIDEND"
+  ],
+  "notification on the repurchase of shares": [
+   "REPURCHASE"
+  ],
+  "notification re rights issue": [
+   "RIGHTS_ISSUE"
+  ],
+  "private placement": [
+   "PRIVATE_PLACEMENT"
+  ],
+  "private placement and rights issue": [
+   "PRIVATE_PLACEMENT",
+   "RIGHTS_ISSUE"
+  ],
+  "private placement and rights issue of shares": [
+   "PRIVATE_PLACEMENT",
+   "RIGHTS_ISSUE"
+  ],
+  "private placement and rights issue of shares dates": [
+   "PRIVATE_PLACEMENT",
+   "RIGHTS_ISSUE"
+  ],
+  "private placement of ordinary shares notification on the listing of shares": [
+   "PRIVATE_PLACEMENT"
+  ],
+  "private placement of ordinary voting shares notification on the listing of shares": [
+   "PRIVATE_PLACEMENT"
+  ],
+  "private placement of shares": [
+   "PRIVATE_PLACEMENT"
+  ],
+  "private placement of shares notification on the listing of shares": [
+   "PRIVATE_PLACEMENT"
+  ],
+  "reduction of stated capital": [
+   "CAPITAL_REDUCTION"
+  ],
+  "reduction of stated capital and sub division of shares": [
+   "CAPITAL_REDUCTION",
+   "SUB_DIVISION"
+  ],
+  "repurchase of shares": [
+   "REPURCHASE"
+  ],
+  "repurchase of shares agm": [
+   "REPURCHASE"
+  ],
+  "repurchase of shares and consolidation of shares": [
+   "CONSOLIDATION",
+   "REPURCHASE"
+  ],
+  "repurchase of shares and dividend announcement": [
+   "REPURCHASE"
+  ],
+  "repurchase of shares followed by a consolidation of shares": [
+   "CONSOLIDATION",
+   "REPURCHASE"
+  ],
+  "repurchase of shares notification on repurchase of shares": [
+   "REPURCHASE"
+  ],
+  "repurchase of shares notification on the repurchase of shares": [
+   "REPURCHASE"
+  ],
+  "rights isssue": [
+   "RIGHTS_ISSUE"
+  ],
+  "rights isssue notification on the listing of shares": [
+   "RIGHTS_ISSUE"
+  ],
+  "rights issue": [
+   "RIGHTS_ISSUE"
+  ],
+  "rights issue amended dates": [
+   "RIGHTS_ISSUE"
+  ],
+  "rights issue amended dates voting and non voting": [
+   "RIGHTS_ISSUE"
+  ],
+  "rights issue and capitalization of reserves": [
+   "CAPITALISATION",
+   "RIGHTS_ISSUE"
+  ],
+  "rights issue and related party transactions": [
+   "RIGHTS_ISSUE"
+  ],
+  "rights issue and sub division of shares": [
+   "RIGHTS_ISSUE",
+   "SUB_DIVISION"
+  ],
+  "rights issue and sub division of shares dates": [
+   "RIGHTS_ISSUE",
+   "SUB_DIVISION"
+  ],
+  "rights issue cfi": [
+   "RIGHTS_ISSUE"
+  ],
+  "rights issue change of date of acceptance and payment": [
+   "RIGHTS_ISSUE"
+  ],
+  "rights issue cit": [
+   "RIGHTS_ISSUE"
+  ],
+  "rights issue dates": [
+   "RIGHTS_ISSUE"
+  ],
+  "rights issue dates amended": [
+   "RIGHTS_ISSUE"
+  ],
+  "rights issue dates voting and non voting": [
+   "RIGHTS_ISSUE"
+  ],
+  "rights issue kfp": [
+   "RIGHTS_ISSUE"
+  ],
+  "rights issue notification on the listing of shares": [
+   "RIGHTS_ISSUE"
+  ],
+  "rights issue notification on the listings of shares": [
+   "RIGHTS_ISSUE"
+  ],
+  "rights issue of ordinary non voting covertible shares": [
+   "RIGHTS_ISSUE"
+  ],
+  "rights issue of ordinary shares": [
+   "RIGHTS_ISSUE"
+  ],
+  "rights issue of shares": [
+   "RIGHTS_ISSUE"
+  ],
+  "rights issue of shares 2012": [
+   "RIGHTS_ISSUE"
+  ],
+  "rights issue of unlisted ordinary shares": [
+   "RIGHTS_ISSUE"
+  ],
+  "rights issue oversubscribed": [
+   "RIGHTS_ISSUE"
+  ],
+  "rights issue sub division": [
+   "RIGHTS_ISSUE",
+   "SUB_DIVISION"
+  ],
+  "rights issue sub division and other corporate disclosures": [
+   "RIGHTS_ISSUE",
+   "SUB_DIVISION"
+  ],
+  "rights issue tranche 1 notification on the listing of shares": [
+   "RIGHTS_ISSUE"
+  ],
+  "rights warrant issue": [
+   "RIGHTS_ISSUE"
+  ],
+  "scrip dividend": [
+   "SCRIP_DIVIDEND"
+  ],
+  "scrip dividend 2012": [
+   "SCRIP_DIVIDEND"
+  ],
+  "scrip dividend 2016 notification on the listing of shares": [
+   "SCRIP_DIVIDEND"
+  ],
+  "scrip dividend amended": [
+   "SCRIP_DIVIDEND"
+  ],
+  "scrip dividend announcement": [
+   "SCRIP_DIVIDEND"
+  ],
+  "scrip dividend announcement dates": [
+   "SCRIP_DIVIDEND"
+  ],
+  "scrip dividend dates": [
+   "SCRIP_DIVIDEND"
+  ],
+  "scrip dividend further announcement": [
+   "SCRIP_DIVIDEND"
+  ],
+  "scrip dividend notification": [
+   "SCRIP_DIVIDEND"
+  ],
+  "scrip dividend notification on the listing of shares": [
+   "SCRIP_DIVIDEND"
+  ],
+  "seylan bank scrip dividend dates": [
+   "SCRIP_DIVIDEND"
+  ],
+  "share repurchase": [
+   "REPURCHASE"
+  ],
+  "share swap by way of a private placement": [
+   "PRIVATE_PLACEMENT"
+  ],
+  "sub division": [
+   "SUB_DIVISION"
+  ],
+  "sub division of shares": [
+   "SUB_DIVISION"
+  ],
+  "sub division of shares and adjustment to warrants": [
+   "SUB_DIVISION"
+  ],
+  "sub division of shares and rights issue of shares": [
+   "RIGHTS_ISSUE",
+   "SUB_DIVISION"
+  ],
+  "sub division of shares circular to shareholders": [
+   "SUB_DIVISION"
+  ],
+  "sub division of shares dates": [
+   "SUB_DIVISION"
+  ],
+  "sub division of shares subsequent to the rights issue": [
+   "SUB_DIVISION"
+  ],
+  "subdivision of ordinary shares and adjustment to warrants": [
+   "SUB_DIVISION"
+  ],
+  "subdivision of shares capitalization of reserves rights issue of shares": [
+   "CAPITALISATION",
+   "RIGHTS_ISSUE",
+   "SUB_DIVISION"
+  ],
+  "subdivision of shares capitalization of reserves rights issue of shares dates": [
+   "CAPITALISATION",
+   "RIGHTS_ISSUE",
+   "SUB_DIVISION"
+  ],
+  "subdivision private placement and reduction of stated capital": [
+   "CAPITAL_REDUCTION",
+   "PRIVATE_PLACEMENT",
+   "SUB_DIVISION"
+  ]
+ }
+}
