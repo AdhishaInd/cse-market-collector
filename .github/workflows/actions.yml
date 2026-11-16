@@ -4,7 +4,7 @@ on:
   schedule:
     # Times are UTC; Colombo = UTC+5:30. After the event calendar (18:30), whose feed snapshots this job also reads.
     - cron: "0 14 * * *"     # 19:30 Colombo daily, after the evening filings
-    - cron: "30 17 * * *"    # 23:00 Colombo retry: does nothing if today's run already succeeded
+    - cron: "30 17 * * *"    # 23:00 Colombo retry: does nothing if today's run succeeded or the CSE refused a request today
   workflow_dispatch:
 
 permissions:

@@ -458,6 +458,21 @@ class Sync(unittest.TestCase):
         self.assertEqual([r[0] for r in out["ac_queue"][1]], ["k2"])
         self.assertIn("ON CONFLICT(action_id,announcement_pk)", S.upsert_sql("ac_link", ["action_id", "announcement_pk", "evidence"]))
 
+    def test_no_retry_on_the_day_the_cse_refused(self):
+        class T:                                     # the Turso client, backed by a local ac_run table
+            def __init__(self, runs):
+                self.db = sqlite3.connect(":memory:")
+                self.db.execute(S.OWN_SCHEMA[0])
+                self.db.executemany("insert into ac_run (run_at, as_of, ok, exit_code) values (?,?,?,?)", runs)
+
+            def query(self, sql, args=()):
+                return self.db.execute(sql, list(args)).fetchall()
+        today = dt.datetime.now(S.COLO).date().isoformat()
+        for runs, code in (([], 3), ([("a", today, 0, 1)], 3), ([("a", today, 0, 2)], 0), ([("a", today, 1, 0)], 0), ([("a", "2000-01-01", 0, 2)], 3)):
+            with contextlib.redirect_stdout(io.StringIO()), self.assertRaises(SystemExit) as e:
+                S.cmd_done_today(T(runs), None)
+            self.assertEqual(e.exception.code, code, runs)
+
 
 if __name__ == "__main__":
     unittest.main()

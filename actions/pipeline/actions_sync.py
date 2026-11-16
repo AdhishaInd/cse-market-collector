@@ -461,10 +461,12 @@ def cmd_queue_counts(t, a):
 
 
 def cmd_done_today(t, a):
+    """Exit 0 (the retry schedule does nothing) when today's run succeeded, or when the CSE refused a request today
+    (exit 2: no retry on the same day; the next daily run is soon enough)."""
     today = dt.datetime.now(COLO).date().isoformat()
-    n = t.query("select count(*) from ac_run where ok = 1 and as_of = ?", [today])[0][0]
-    print("done today" if n else "not done today")
-    sys.exit(0 if n else 3)
+    ok, refused = t.query("select coalesce(sum(ok = 1), 0), coalesce(sum(exit_code = 2), 0) from ac_run where as_of = ?", [today])[0]
+    print("done today" if ok else "the CSE refused a request today: no retry" if refused else "not done today")
+    sys.exit(0 if ok or refused else 3)
 
 
 def main():

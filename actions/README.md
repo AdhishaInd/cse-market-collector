@@ -30,7 +30,7 @@ the job's public log and issues show counts only.
    in one Turso transaction. The cache and run record are pushed even when the build was refused.
 
 Schedule: 19:30 Colombo daily (after the event calendar at 18:30 and the evening filings), and a 23:00 retry that does
-nothing when today already succeeded. A failure opens an issue (label `actions-failure`), closed by the next success.
+nothing when today already succeeded or the CSE refused a request today. A failure opens an issue (label `actions-failure`), closed by the next success.
 The issue `Corporate actions waiting for review` (label `actions-queue`) shows the queue counts.
 
 ## How a notice becomes an action
@@ -168,7 +168,7 @@ when the as-of date moves.)
 | Exit | Meaning | What to do |
 |---|---|---|
 | 1 | A check failed (id clash, input tables changed, broken links, two actions with one ex-date and amount, more than 60 new actions / 400 notices, bad reviewed file) or the data directory was empty | The reason is in Turso `ac_run.error` (not in the public log). For an id clash: someone created ids locally - resolve before the next run. For the size limit: check the report, then run once with `--allow-large-change`. |
-| 2 | The CSE refused (429/403/WAF/non-JSON) | Do not rerun soon; the next scheduled run is soon enough. If it repeats, check by hand whether the endpoint moved. |
+| 2 | The CSE refused (429/403/WAF/non-JSON) | Do not rerun soon; the 23:00 retry skips that day, the next daily run is soon enough. If it repeats, check by hand whether the endpoint moved. |
 | 4 | Another run is active | Nothing. |
 | Turso error | Pull or push failed | The push is one transaction; rerun the workflow. |
 
