@@ -402,10 +402,25 @@ def pull_into(main, rows, dry_run=False, include_unreviewed=False):
         work.unlink(missing_ok=True)
 
 
+def mark_pulled_statements(stamp, held, at):
+    """UPDATE statements that mark the pulled rows in Turso. Actions held back for review (and their links and values)
+    never reached main, so they stay unmarked: `apply_decisions` refuses `same_as` for a pulled action."""
+    held = sorted(held)
+    out = []
+    for tb in ("ac_announcement", "ac_action", "ac_link", "ac_value"):
+        sql, args = f"UPDATE {tb} SET pulled_at=? WHERE pulled_at IS NULL AND updated_at <= ?", [at, stamp]
+        if held and tb != "ac_announcement":
+            sql += f" AND action_id NOT IN ({','.join('?' * len(held))})"
+            args += held
+        out.append((sql, args))
+    return out
+
+
 def cmd_pull_actions(t, a):
     stamp = t.query("select max(updated_at) from (select updated_at from ac_announcement union all select updated_at from ac_action "
                     "union all select updated_at from ac_link union all select updated_at from ac_value)")[0][0] or ""
     rows = read_rows(t)
+    held = set() if a.include_unreviewed else held_actions(rows)
     rep, backup = pull_into(a.main, rows, a.dry_run, a.include_unreviewed)
     conflicts = rep.pop("value_conflicts")
     print("pull:", json.dumps(rep))
@@ -417,8 +432,8 @@ def cmd_pull_actions(t, a):
     print("swapped; previous main kept as", backup.name)
     tx = Tx(t)
     try:
-        for tb in ("ac_announcement", "ac_action", "ac_link", "ac_value"):
-            tx.add(f"UPDATE {tb} SET pulled_at=? WHERE pulled_at IS NULL AND updated_at <= ?", [now(), stamp])
+        for sql, args in mark_pulled_statements(stamp, held, now()):
+            tx.add(sql, args)
         tx.commit()
     except Exception:
         tx.rollback()

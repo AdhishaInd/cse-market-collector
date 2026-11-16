@@ -389,6 +389,30 @@ class PullIntoMain(Fixture):
             S.pull_into(main, self.rows())
 
 
+    def test_held_action_stays_unmarked_so_same_as_still_applies(self):
+        self.notice(40001, "RIGHTS ISSUE", "ALPHA HOLDINGS PLC", dt.date(2026, 11, 1), rights(40001, "AAA", "01 Nov 2026"))
+        self.notice(40070, "RIGHTS ISSUE", "ALPHA HOLDINGS PLC", dt.date(2026, 11, 4), {"reqBaseAnnouncement": {"id": 40070, "dType": "RightsIssue", "symbol": "AAA"}})
+        self.run_build()
+        rows = self.rows()
+        held = S.held_actions(rows)
+        self.assertEqual(held, {4184})
+        rep, _ = S.pull_into(self.make_main(), rows)
+        self.assertEqual((rep["actions_added"], rep["held_for_review"]), (1, 1))
+        stamp = max(r["updated_at"] for t in ("ac_announcement", "ac_action", "ac_link", "ac_value") for r in rows[t])
+        key = self.q("select item_key from ac_queue")[0][0]
+        dbp = self.root / "db" / "actions.db"
+        snapshot = dbp.read_bytes()
+        for excluded, want in ((set(), "ACTIVE"), (held, "SAME_AS:4183")):    # unconditional marking (old) vs held excluded
+            dbp.write_bytes(snapshot)
+            db = sqlite3.connect(dbp)
+            for sql, args in S.mark_pulled_statements(stamp, excluded, "2026-11-15T10:00:00+05:30"):
+                db.execute(sql, args)
+            db.commit(); db.close()
+            self.run_build(decisions={key: {"decision": "same_as", "action_id": 4183, "note": "test"}})
+            self.assertEqual(self.q("select status from ac_action where action_id=4184"), [(want,)])
+            self.assertEqual(self.q("select pulled_at is not null from ac_action where action_id=4183"), [(1,)])
+
+
 class PublicLog(Fixture):
     def test_log_lines_carry_no_symbols_or_names(self):
         self.notice(40001, "RIGHTS ISSUE", "ALPHA HOLDINGS PLC", dt.date(2026, 11, 1), rights(40001, "AAA", "01 Nov 2026"))
