@@ -1,5 +1,5 @@
 {
- "_doc": "Normalized CSE announcement category -> corporate-action kinds. Copied from the local main database's announcement_kind_map (action kinds only) on 2026-11-17. Categories not listed here are classified by the rules in notices.kinds_for (counted as category_by_rule in the run report).",
+ "_doc": "Normalized CSE announcement category -> corporate-action kinds. Copied from the local main database's announcement_kind_map (action kinds only) on 2026-11-17. Categories not listed here are classified by the rules in notices.kinds_for (counted as category_by_rule in the run report). Category names that carry a company name were left out (classified by the rules instead).",
  "map": {
   "amended cash and scrip dividend dates": [
    "CASH_DIVIDEND",
@@ -23,9 +23,6 @@
   ],
   "annual general meeting and scrip dividend dates": [
    "SCRIP_DIVIDEND"
-  ],
-  "browns beach hotels further announcement re rights issue": [
-   "RIGHTS_ISSUE"
   ],
   "capitalisation of reserves": [
    "CAPITALISATION"
@@ -105,12 +102,6 @@
   "cash dividend dates to be notified": [
    "CASH_DIVIDEND"
   ],
-  "ceylon hospitals plc durdans dividend announcement": [
-   "CASH_DIVIDEND"
-  ],
-  "ceylon leather products plc repurchase of shares": [
-   "REPURCHASE"
-  ],
   "consolidation of shares": [
    "CONSOLIDATION"
   ],
@@ -124,9 +115,6 @@
   ],
   "corporate disclosure re rights issue": [
    "RIGHTS_ISSUE"
-  ],
-  "disclosure re share repurchase by ndb capital holdings plc": [
-   "REPURCHASE"
   ],
   "dividend announcement": [
    "CASH_DIVIDEND"
@@ -165,10 +153,6 @@
    "CASH_DIVIDEND"
   ],
   "dividend announcements cash and scrip": [
-   "CASH_DIVIDEND",
-   "SCRIP_DIVIDEND"
-  ],
-  "dividend announcements cash and scrip cdb": [
    "CASH_DIVIDEND",
    "SCRIP_DIVIDEND"
   ],
@@ -227,9 +211,6 @@
   ],
   "issue of shares by way of capitalization of reserves": [
    "CAPITALISATION"
-  ],
-  "national development bank plc scrip dividend": [
-   "SCRIP_DIVIDEND"
   ],
   "notification of listing of shares of scrip dividend": [
    "SCRIP_DIVIDEND"
@@ -348,13 +329,7 @@
    "RIGHTS_ISSUE",
    "SUB_DIVISION"
   ],
-  "rights issue cfi": [
-   "RIGHTS_ISSUE"
-  ],
   "rights issue change of date of acceptance and payment": [
-   "RIGHTS_ISSUE"
-  ],
-  "rights issue cit": [
    "RIGHTS_ISSUE"
   ],
   "rights issue dates": [
@@ -364,9 +339,6 @@
    "RIGHTS_ISSUE"
   ],
   "rights issue dates voting and non voting": [
-   "RIGHTS_ISSUE"
-  ],
-  "rights issue kfp": [
    "RIGHTS_ISSUE"
   ],
   "rights issue notification on the listing of shares": [
@@ -435,9 +407,6 @@
    "SCRIP_DIVIDEND"
   ],
   "scrip dividend notification on the listing of shares": [
-   "SCRIP_DIVIDEND"
-  ],
-  "seylan bank scrip dividend dates": [
    "SCRIP_DIVIDEND"
   ],
   "share repurchase": [

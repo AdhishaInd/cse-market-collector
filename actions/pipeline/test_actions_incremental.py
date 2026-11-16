@@ -408,6 +408,19 @@ class PublicLog(Fixture):
         self.assertIn("AAA", (self.root / "logs").joinpath(pathlib.Path(status["report"]).name).read_text())   # private report has them
 
 
+class Reviewed(unittest.TestCase):
+    def test_check_reviewed(self):
+        good = {40060: {"kind": "RIGHTS_ISSUE", "values": {"ex_date": "2026-11-24"}, "read_from": "u page 1"}}
+        self.assertEqual(R.check_reviewed(good, {"k": {"decision": "keep"}}), [])
+        bad = {1: {"kind": "RIGHTS", "values": {"ex_date": "24 Nov 2026", "issue_price": -1}}, 2: {"kind": "RIGHTS_ISSUE", "read_from": "u"}}
+        self.assertEqual(len(R.check_reviewed(bad, {"k": {"decision": "same_as"}})), 6)
+        self.assertEqual(R.check_reviewed({}, {}), [])
+        # the real files in the repository are valid
+        r = json.loads((R.REVIEWED / "notice_readings.json").read_text())
+        d = json.loads((R.REVIEWED / "review_decisions.json").read_text())
+        self.assertEqual(R.check_reviewed({int(k): v for k, v in r.items() if not k.startswith("_")}, {k: v for k, v in d.items() if not k.startswith("_")}), [])
+
+
 class Sync(unittest.TestCase):
     def test_run_rows_only_this_run_and_no_local_meta(self):
         db = sqlite3.connect(":memory:")

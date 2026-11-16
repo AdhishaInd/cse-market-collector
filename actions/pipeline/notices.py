@@ -132,7 +132,7 @@ def load_kind_map(path=None):
     return {k: set(v) for k, v in json.loads(p.read_text())["map"].items()}
 
 
-RULES = [(r"\bscrip\b", "SCRIP_DIVIDEND"), (r"\bsub ?division\b|\bsplit\b", "SUB_DIVISION"), (r"\bconsolidation\b", "CONSOLIDATION"),
+RULES = [(r"\bcash\b.*\bdividend|\bdividend.*\bcash\b", "CASH_DIVIDEND"), (r"\bscrip\b", "SCRIP_DIVIDEND"), (r"\bsub ?division\b|\bsplit\b", "SUB_DIVISION"), (r"\bconsolidation\b", "CONSOLIDATION"),
          (r"\bcapitali[sz]ation\b|\bbonus issue\b", "CAPITALISATION"), (r"\brights? (?:issue|isssue)\b", "RIGHTS_ISSUE"),
          (r"\brepurchase\b|\bbuy ?back\b", "REPURCHASE"), (r"\breduction of (?:stated )?capital\b", "CAPITAL_REDUCTION"),
          (r"\bprivate placement\b", "PRIVATE_PLACEMENT")]
