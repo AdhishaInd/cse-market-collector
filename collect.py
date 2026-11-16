@@ -208,6 +208,13 @@ def collect():
     ts = (api("tradeSummary") or {}).get("reqTradeSummery") or []
     last = max((day_of(x["lastTradedTime"]) for x in ts if x.get("lastTradedTime")), default=None)
     reported = recent_trading_days()
+    if last != today and last is not None and last in reported and not archived(last) and today not in reported \
+            and (first_archived() is None or last >= first_archived()):
+        # A run that starts after midnight (GitHub delays schedules by hours on some days) still finds the previous
+        # session's data: it is served until the next session opens. Archive that session instead of losing it. The
+        # per-stock check below (trade stamps must be of this day) still refuses data that has been reset.
+        print(f"{today}: no trading today; the session of {last} is not archived and still served - archiving it", flush=True)
+        today = last
     if last != today:
         if today in reported:
             raise Fail(f"dailyMarketSummery reports trading on {today} but tradeSummary is empty/stale "
