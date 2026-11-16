@@ -354,7 +354,10 @@ class Builder:
             if both and "NON_VOTING" not in classes and self.secs.get(cid, {}).get("NON_VOTING"):
                 for r in [r for r in rows if r["cls"] == "VOTING"]:
                     if (base or {}).get("dType") in (None, "General") or not any(r.get(f) is not None for f in N.TERM_FIELDS):
-                        rows.append(dict(r, cls="NON_VOTING"))
+                        # the notice names both classes, so its dates apply to both; terms and share numbers printed
+                        # for the voting class are not the non-voting class's (never carried across)
+                        nv = {k: v for k, v in r.items() if k not in N.TERM_FIELDS + ("shares_issued", "shares_before", "shares_after")}
+                        rows.append(dict(nv, cls="NON_VOTING"))
                         self.bump("both_classes_by_text")
             for a in rows:
                 sid = self.security_for(cid, a["cls"])

@@ -249,6 +249,14 @@ class Builder(Fixture):
         self.assertEqual(self.q("select security_id, ex_date from ac_action order by security_id"), [(20, "2026-11-25"), (21, "2026-11-25")])
         self.assertEqual(self.q("select count(*) from ac_link where announcement_pk=502"), [(2,)])
 
+    def test_both_classes_carry_dates_but_not_the_voting_ratio(self):
+        self.notice(40012, "SUB-DIVISION OF SHARES (DATES) - VOTING AND NON VOTING", "BETA BANK PLC", dt.date(2026, 11, 6),
+                    general(40012, "BBB", "06 Nov 2026", "SUB-DIVISION OF SHARES (DATES)", "Sub-division - Voting and Non-Voting shares",
+                            votingProportion="1 into 2", subDivisionBasedOnShareholdingsAsAt=ms(2026, 11, 20)), general=True)
+        self.run_build()
+        self.assertEqual(self.q("select security_id, record_date, ratio_text from ac_action order by security_id"),
+                         [(20, "2026-11-20", "1 into 2"), (21, "2026-11-20", None)])      # non-voting ratio not printed: NULL
+
     def test_unlinked_dates_notice_goes_to_review(self):
         self.notice(40020, "SUB-DIVISION OF SHARES (DATES)", "GAMMA PLC", dt.date(2026, 11, 6),
                     general(40020, "CCC", "06 Nov 2026", "SUB-DIVISION OF SHARES (DATES)", votingProportion="1 into 2",
