@@ -320,8 +320,7 @@ class Builder(Fixture):
         self.assertEqual(self.q("select action_id, status from ac_action order by 1"), [(4183, "ACTIVE"), (4184, "SAME_AS:4183")])
         self.assertIn((4183, 502), self.q("select action_id, announcement_pk from ac_link"))
 
-    def test_same_ex_date_twice_refused_by_check(self):
-        b = B.Builder(sqlite3.connect(":memory:"), "2026-11-14T00:00:00+05:30") if False else None
+    def test_same_ex_date_and_amount_is_the_same_event(self):
         self.notice(40080, "CASH DIVIDEND", "GAMMA PLC", dt.date(2026, 11, 3),
                     {"reqBaseAnnouncement": {"id": 40080, "dType": "CashDividendWithDates", "symbol": "CCC", "votingDivPerShare": 1.5, "xd": "12 Nov 2026"}})
         self.run_build()        # same ex-date and amount as action 4182: attached, not a second action

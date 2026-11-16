@@ -73,9 +73,46 @@ def cmd_init(t, a):
     if stmts:
         t.run(stmts)
     print(f"schema ready; id floor: action {max(ma, int(have.get('floor_action_id', 0)))}, notice {max(mn, int(have.get('floor_announcement_pk', 0)))}")
+    seed_main_rows(t, db)
     if (ma, mn) != (ta, tn):
-        print(f"note: main is ahead of the Turso input copy (actions {ma} vs {ta}, notices {mn} vs {tn}); "
-              "run `events_sync.py push-inputs --main ...` so the job sees main's latest notices")
+        print(f"note: main is ahead of the Turso input copy (actions {ma} vs {ta}, notices {mn} vs {tn}); its extra rows were "
+              "seeded into the ac_ tables (marked pulled). `events_sync.py push-inputs --main ...` is still recommended.")
+
+
+def seed_main_rows(t, db):
+    """Rows main has but the Turso input copy lacks (main was refreshed locally after the last push-inputs): copied into
+    the ac_ tables with main's own ids and marked pulled, so the job neither captures those notices again under new
+    ids nor misses their links. Never changes an input table."""
+    have_n = {r[0] for r in t.query("select announcement_pk from announcement")} | {r[0] for r in t.query("select announcement_pk from ac_announcement")}
+    have_a = {r[0] for r in t.query("select action_id from corporate_action")} | {r[0] for r in t.query("select action_id from ac_action")}
+    have_l = set(t.query("select action_id, announcement_pk from corporate_action_announcement")) | set(t.query("select action_id, announcement_pk from ac_link"))
+    stamp = now()
+    tx = Tx(t)
+    n = {"notices": 0, "actions": 0, "links": 0}
+    try:
+        for r in db.execute(f"select {','.join(B.ANN_COLS)} from announcement order by 1"):
+            if r[0] in have_n:
+                continue
+            tx.add("INSERT INTO ac_announcement VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", list(r) + ["[]", None, "[]", "main", stamp, stamp, stamp])
+            n["notices"] += 1
+        cols = B.ACTION_COLS
+        for r in db.execute(f"select {','.join(cols)} from corporate_action order by 1"):
+            if r[0] in have_a:
+                continue
+            first = db.execute("select min(announcement_pk) from corporate_action_announcement where action_id=?", (r[0],)).fetchone()[0]
+            tx.add(f"INSERT INTO ac_action ({','.join(cols)}, status, created_by_pk, created_at, updated_at, pulled_at) VALUES "
+                   f"({','.join('?' * (len(cols) + 5))})", list(r) + ["ACTIVE", first or 0, stamp, stamp, stamp])
+            n["actions"] += 1
+        for aid, pk in db.execute("select action_id, announcement_pk from corporate_action_announcement"):
+            if (aid, pk) in have_l:
+                continue
+            tx.add("INSERT INTO ac_link VALUES (?,?,?,?,?,?)", [aid, pk, "main", stamp, stamp, stamp])
+            n["links"] += 1
+        tx.commit()
+    except Exception:
+        tx.rollback()
+        raise
+    print("seeded from main (rows the Turso input copy lacks):", json.dumps(n))
 
 
 # ---- pull (for a run) ---------------------------------------------------------------------------------------------

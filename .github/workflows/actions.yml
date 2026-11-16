@@ -1,0 +1,118 @@
+name: CSE corporate actions
+
+on:
+  schedule:
+    # Times are UTC; Colombo = UTC+5:30. After the event calendar (18:30), whose feed snapshots this job also reads.
+    - cron: "0 14 * * *"     # 19:30 Colombo daily, after the evening filings
+    - cron: "30 17 * * *"    # 23:00 Colombo retry: does nothing if today's run already succeeded
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: actions
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TURSO_EVENTS_URL: ${{ secrets.TURSO_EVENTS_URL }}
+      TURSO_EVENTS_TOKEN: ${{ secrets.TURSO_EVENTS_TOKEN }}
+      ACTIONS_ROOT: ${{ github.workspace }}/actions/work
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Skip the retry if today is done
+        id: gate
+        run: |
+          if [ "${{ github.event.schedule }}" = "30 17 * * *" ] && python -I actions/pipeline/actions_sync.py done-today; then
+            echo "skip=1" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Tests
+        if: steps.gate.outputs.skip != '1'
+        run: python -I actions/pipeline/test_actions_incremental.py
+
+      - name: Pull from Turso
+        if: steps.gate.outputs.skip != '1'
+        run: python -I actions/pipeline/actions_sync.py pull --root "$ACTIONS_ROOT" > /dev/null
+
+      - name: Refresh (fetch, build, check)
+        if: steps.gate.outputs.skip != '1'
+        id: refresh
+        run: |
+          set +e
+          python -I actions/pipeline/refresh_actions.py
+          echo "rc=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Push results to Turso
+        if: steps.gate.outputs.skip != '1'
+        # always after a pull: the run record and the new feed snapshot are kept even when the build was refused
+        run: python -I actions/pipeline/actions_sync.py push-results --root "$ACTIONS_ROOT" > /dev/null
+
+      - name: Summary (counts only)
+        if: always() && steps.gate.outputs.skip != '1'
+        run: |
+          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json, os, pathlib
+          p = pathlib.Path(os.environ["ACTIONS_ROOT"]) / "logs/LAST_RUN.json"
+          s = json.loads(p.read_text()) if p.exists() else {}
+          print(f"as_of {s.get('as_of')} ok {s.get('ok')} exit {s.get('exit')}")
+          print(f"\ncounts {json.dumps(s.get('counts'), sort_keys=True)}  open queues {json.dumps(s.get('queues'), sort_keys=True)}")
+          PY
+
+      - name: Fail if the refresh failed
+        if: steps.gate.outputs.skip != '1' && steps.refresh.outputs.rc != '0'
+        run: |
+          echo "::error::refresh failed, exit ${{ steps.refresh.outputs.rc }} (reason in Turso ac_run; see actions/README.md 'On failure')"
+          exit 1
+
+      - name: Queue counts in an issue
+        if: success() && steps.gate.outputs.skip != '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          C=$(python -I actions/pipeline/actions_sync.py queue-counts)
+          R=$(echo "$C" | python -c "import json,sys; print(json.load(sys.stdin)['needs-reading'])")
+          V=$(echo "$C" | python -c "import json,sys; print(json.load(sys.stdin)['needs-review'])")
+          N=$((R + V))
+          gh label create actions-queue --color FBCA04 2>/dev/null || true
+          OPEN=$(gh issue list --label actions-queue --state open --json number --jq '.[0].number')
+          BODY="Corporate-action notices waiting for a person or agent (counts updated each run): $R letters to read, $V items to review. Locally: \`python3 -I actions/pipeline/actions_sync.py needs-reading\` / \`needs-review\` (see actions/README.md, 'Queues'). This issue closes itself when both are empty."
+          if [ "$N" -gt 0 ] && [ -z "$OPEN" ]; then
+            gh issue create --title "Corporate actions waiting for review" --label actions-queue --body "$BODY"
+          elif [ "$N" -gt 0 ]; then
+            gh issue edit "$OPEN" --body "$BODY"
+          elif [ -n "$OPEN" ]; then
+            gh issue close "$OPEN" --comment "Nothing left to read or review."
+          fi
+
+      - name: Notify on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          gh label create actions-failure --color B60205 2>/dev/null || true
+          OPEN=$(gh issue list --label actions-failure --state open --json number --jq '.[0].number')
+          BODY="Corporate-action capture failed: $RUN_URL
+          Turso is unchanged except for the run record. What to do per exit code: actions/README.md ('On failure')."
+          if [ -n "$OPEN" ]; then gh issue comment "$OPEN" --body "$BODY"
+          else gh issue create --title "Corporate-action capture failed $(TZ=Asia/Colombo date +%F)" --label actions-failure --body "$BODY"; fi
+
+      - name: Close failure issue after recovery
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for n in $(gh issue list --label actions-failure --state open --json number --jq '.[].number'); do
+            gh issue close "$n" --comment "Recovered: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          done
