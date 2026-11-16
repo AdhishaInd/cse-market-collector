@@ -233,6 +233,9 @@ def insert_rows(tx, t, cols, rows, max_vars=30000):
 
 def replace_tables(tx, db, tables):
     """Replace whole tables (given parent-first): deletes child-first, then inserts parent-first. Returns {table: rows}."""
+    # A table that is NOT being replaced (an event table, or an unchanged input) may reference rows of one that is; the rows
+    # come back with the same keys, so the foreign keys are checked once, at commit, instead of at each DELETE.
+    tx.add("PRAGMA defer_foreign_keys = ON")
     for t in reversed(tables):
         tx.add(f'DELETE FROM "{t}"')
     out = {}
