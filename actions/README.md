@@ -4,14 +4,13 @@ A daily job that captures NEW Colombo Stock Exchange corporate-action notices (c
 sub-divisions, consolidations, capitalisations, repurchases, capital reductions, private placements) and builds the
 actions incrementally: existing action ids never change, a follow-up notice is attached to its action instead of
 becoming a second one, and revised values keep their history. Runs on GitHub Actions (`.github/workflows/actions.yml`).
-Data lives in the private Turso database `cse-events`, next to the event calendar; this repository holds code only, and
+Data lives in the owner's private main database on Turso (`cse-main`, the single database since 2026-11-18); this repository holds code only, and
 the job's public log and issues show counts only.
 
 ## What a run does
 
-1. **Pull.** `actions_sync.py pull` builds `actions/work/db/actions.db` from Turso: the input copies of company,
-   security, announcement, corporate_action and corporate_action_announcement (pushed from the local main database by
-   `events/pipeline/events_sync.py push-inputs`), the job's own `ac_` tables, and the cached CSE responses: this job's
+1. **Pull.** `actions_sync.py pull` builds `actions/work/db/actions.db` from Turso: main's tables company,
+   security, announcement, corporate_action and corporate_action_announcement, the job's own `ac_` tables, and the cached CSE responses: this job's
    (`ac_cache`) and, read only, the event calendar's feed snapshots, corporate calendar and announcement details.
 2. **Refresh** (`refresh_actions.py`):
    - **Fetch** `approvedAnnouncement` (1 request), merged into today's snapshot.
@@ -68,7 +67,7 @@ action of the same kind is open (or, except cash dividends, announced in the las
 - **Letters**: a dates / amended notice of a share issue that prints no date in any structured field has its dates
   only in the PDF. The job does not read PDFs; it queues the notice in `needs-reading`.
 
-## The data (Turso `cse-events`, tables written by this job only)
+## The data (tables in Turso `cse-main` written by this job only)
 
 | Table | Contents |
 |---|---|
@@ -81,7 +80,7 @@ action of the same kind is open (or, except cash dividends, announced in the las
 | `ac_run` | One row per run: ok, exit code, counts, the private report (with symbols) |
 | `ac_cache` | Raw CSE responses of this job (gzip) |
 
-The event calendar's tables (including its input copies) are only read.
+The event calendar's tables and main's own tables are only read.
 
 ## Who owns which ids
 
@@ -91,15 +90,16 @@ The event calendar's tables (including its input copies) are only read.
   done before go-live is neither captured twice nor collided with.
 - **The local machine no longer creates notice or action ids** (no `load_actions.py`, no staging inserts of new notices
   or actions). It pulls the job's rows into main (`pull-actions`, same ids). Local review results (corrections of
-  values, `action_review`, factors) stay local and keep flowing up through `push-inputs`; for the job, main's value wins
-  for anything pulled before the last `push-inputs` of `corporate_action`.
+  values, `action_review`, factors) are made in the owner's working copy and reach `cse-main` when it is synced; for
+  the job, main's value wins for anything pulled before `corporate_action` last changed there (sync_meta
+  `sha:corporate_action`).
 - `pull-actions` refuses on any clash (an id that names a different notice/action in main, or a notice main holds under
   another pk) and changes nothing.
 
 ## Local commands
 
-Credentials: `set -a; . ~/.config/cse-events.env; set +a` (`TURSO_EVENTS_URL`, `TURSO_EVENTS_TOKEN`; the same values
-are the repository secrets).
+Credentials: `TURSO_EVENTS_URL`, `TURSO_EVENTS_TOKEN`, pointing at `cse-main` (the same values are the repository
+secrets), loaded with `set -a; . <env file>; set +a`.
 
 ```
 MAIN=<cse_financials>/db/cse_financials.db                 # the local main database
@@ -126,7 +126,6 @@ Main is kept as `db/backup_actions_<time>.db` (hard link, the 7 newest kept). Th
 
 ```
 cd <cse_financials>
-python3 -I <this repository>/events/pipeline/events_sync.py push-inputs --main db/cse_financials.db
 .venv/bin/python -I scripts/apply_actions_round3.py --asof YYYY-MM-DD \
     --prepare work/actions4/review/prepare_new_rights.py --prepare work/actions5/prepare_round6.py           # staging + checks
 .venv/bin/python -I scripts/apply_actions_round3.py --asof YYYY-MM-DD \
@@ -134,7 +133,7 @@ python3 -I <this repository>/events/pipeline/events_sync.py push-inputs --main d
 ```
 
 (see `cse_financials/docs/ACTIONS_ROUND3_2026-11-15.md`, round 6; prices first with `scripts/fetch_turso_prices.py`
-when the as-of date moves.)
+when the as-of date moves; then sync the working copy to `cse-main`.)
 
 ## Queues
 
@@ -157,7 +156,7 @@ when the as-of date moves.)
    not reused). It is refused for an action already pulled into main: correct that one locally.
 3. Check, commit, push as above.
 
-## Going live (for the parent / owner)
+## Going live (done 2026-11-17; kept for the record - `push-inputs` was retired on 2026-11-18)
 
 1. Locally: `events_sync.py push-inputs --main $MAIN` (Turso's input copy was behind main on 2026-11-17), then
    `actions_sync.py init --main $MAIN` (already done once on 2026-11-17; rerunning is safe).

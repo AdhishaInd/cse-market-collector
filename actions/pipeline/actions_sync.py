@@ -1,8 +1,8 @@
-"""Sync the corporate-action capture between Turso (database cse-events) and a local SQLite file / data directory.
+"""Sync the corporate-action capture between Turso (cse-main, the single main database) and a local SQLite file / data directory.
 
-Turso tables used (the existing event-calendar tables are only READ, never written):
-  read   company, security, announcement, corporate_action, corporate_action_announcement (inputs pushed from the
-         local main db by events_sync.py push-inputs), sync_meta (when corporate_action was last pushed),
+Turso tables used (the event-calendar tables and main's own tables are only READ, never written):
+  read   company, security, announcement, corporate_action, corporate_action_announcement (main's own tables),
+         sync_meta (when corporate_action last changed),
          event_cache (the events job's feed snapshots, corporate calendar and announcement details)
   write  ac_announcement, ac_action, ac_link, ac_value, ac_queue, ac_meta  (this job's rows; see build_actions.py)
          ac_run (one row per run), ac_cache (this job's raw responses)
@@ -76,7 +76,7 @@ def cmd_init(t, a):
     seed_main_rows(t, db)
     if (ma, mn) != (ta, tn):
         print(f"note: main is ahead of the Turso input copy (actions {ma} vs {ta}, notices {mn} vs {tn}); its extra rows were "
-              "seeded into the ac_ tables (marked pulled). `events_sync.py push-inputs --main ...` is still recommended.")
+              "seeded into the ac_ tables (marked pulled). Sync the local working copy to cse-main if it is ahead.")
 
 
 def seed_main_rows(t, db):
@@ -457,7 +457,7 @@ def cmd_pull_actions(t, a):
         tx.rollback()
         print("WARNING: rows not marked pulled in Turso (harmless: the next pull skips what main has)")
         raise
-    print("next: events_sync.py push-inputs --main ...; then the local apply (see actions/README.md)")
+    print("next: the local apply (see actions/README.md), then sync the working copy to cse-main")
 
 
 # ---- queues / status ------------------------------------------------------------------------------------------------

@@ -1,24 +1,24 @@
-"""Sync the event calendar between Turso (database cse-events) and a local SQLite file / data directory.
+"""Sync the event calendar between Turso (cse-main, the single main database) and a local SQLite file / data directory.
 
-Turso holds what the daily job needs and produces - never the full financials database:
-  input tables  (written only by push-inputs, from the local main database): sector, reporting_template, company,
-                security, announcement, corporate_action, corporate_action_announcement, listing_event, report_document
+Since 2026-11-18 the event job reads and writes the main database itself (Turso `cse-main`):
+  input tables  main's own tables, published there by the owner's local working-copy sync: sector, reporting_template,
+                company, security, announcement, corporate_action, corporate_action_announcement, listing_event,
+                report_document
   event tables  (written by push-results, from the daily job): company_event, company_event_source,
                 result_estimate_backtest, event_load_meta, company_event_change
   event_cache   raw API responses and letter readings (path, sha256, gzip body) - the job's incremental cache
   event_run     one row per daily run: status, counts, report text
-  sync_meta     per-table checksums of the pushed inputs
+  sync_meta     sync markers (e.g. when each input table last changed)
 
-Commands (env TURSO_EVENTS_URL / TURSO_EVENTS_TOKEN):
-  init --main DB [--root DIR]   create the schema; push inputs, the current event tables and the cache (first time)
-  push-inputs --main DB         push changed input tables (after a local report / announcement / corporate-action refresh)
+Commands (env TURSO_EVENTS_URL / TURSO_EVENTS_TOKEN, both pointing at cse-main):
   push-cache --root DIR         push changed cache files
   pull --root DIR               build DIR/db/cse_financials.db (inputs + events) and DIR/raw_api/... for the daily job
   push-results --root DIR       after refresh_events.py: replace the event tables, append changes, push changed cache
                                 files and the run record - one Turso transaction
-  pull-events --main DB         copy the event tables from Turso into the local main database (copy -> check -> swap)
   needs-reading                 rights letters waiting for a person / agent (from the cache in Turso)
   done-today                    exit 0 if today's run already succeeded (used by the retry schedule)
+  init, push-inputs, pull-events   retired 2026-11-18 (they copied tables between a separate events database and the
+                                local main; the main database now holds both)
 Writes that replace a table run in one transaction (Hrana interactive stream), so readers never see half a table.
 """
 import argparse, base64, datetime as dt, gzip, hashlib, json, os, pathlib, sqlite3, sys, time, urllib.error, urllib.request
@@ -321,47 +321,13 @@ def ro(path):
 
 
 def cmd_init(t, a):
-    db = ro(a.main)
-    stmts = schema_sql(db, INPUT_TABLES + EVENT_TABLES + [CHANGE_TABLE]) + OWN_SCHEMA
-    for v in VIEWS:
-        r = db.execute("select sql from sqlite_master where type='view' and name=?", (v,)).fetchone()
-        if r:
-            stmts += [f'DROP VIEW IF EXISTS "{v}"', r[0]]
-    t.run([(s, []) for s in stmts])
-    print("schema ready")
-    cmd_push_inputs(t, a)
-    if not t.query("select count(*) from company_event")[0][0]:
-        tx = Tx(t)
-        try:
-            print(replace_tables(tx, db, EVENT_TABLES + [CHANGE_TABLE]))
-            tx.commit()
-        except Exception:
-            tx.rollback(); raise
-    if a.root:
-        print("cache files pushed:", push_cache(t, a.root))
+    raise Fail("retired 2026-11-18: the event job now uses the main database directly (Turso cse-main); "
+               "the local working copy syncs with it instead")
 
 
 def cmd_push_inputs(t, a):
-    db = ro(a.main)
-    have = dict(t.query("select key, value from sync_meta where key like 'sha:%'"))
-    todo = [(tb, table_sha(db, tb)) for tb in INPUT_TABLES]
-    todo = [(tb, h) for tb, h in todo if have.get(f"sha:{tb}") != h]
-    if not todo:
-        print("inputs unchanged")
-        return
-    tx = Tx(t)
-    try:
-        order = [tb for tb in INPUT_TABLES if tb in dict(todo)]
-        print("pushed rows:", replace_tables(tx, db, order))
-        for tb, h in todo:
-            tx.add("INSERT INTO sync_meta VALUES (?,?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at",
-                   [f"sha:{tb}", h, now()])
-        tx.add("INSERT INTO sync_meta VALUES ('inputs_pushed_at',?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at",
-               [now(), now()])
-        tx.commit()
-    except Exception:
-        tx.rollback()
-        raise
+    raise Fail("retired 2026-11-18: the event job now uses the main database directly (Turso cse-main); "
+               "the local working copy syncs with it instead")
 
 
 def cmd_push_cache(t, a):
@@ -439,42 +405,8 @@ def cmd_push_results(t, a):
 
 
 def cmd_pull_events(t, a):
-    import refresh_events as R
-    main = pathlib.Path(a.main).resolve()
-    R.MAIN, R.WORK = main, main.with_name("work_events_pull.db")
-    fp = R.copy_main()
-    db = sqlite3.connect(R.WORK)
-    before = R.table_counts(db)
-    remote_asof = t.query("select value from event_load_meta where key='as_of'")
-    local_asof = db.execute("select value from event_load_meta where key='as_of'").fetchone() if \
-        db.execute("select 1 from sqlite_master where name='event_load_meta'").fetchone() else None
-    if not remote_asof:
-        raise Fail("Turso has no event_load_meta.as_of")
-    if local_asof and local_asof[0] > remote_asof[0][0] and not a.force:
-        raise Fail(f"local as_of {local_asof[0]} is newer than Turso's {remote_asof[0][0]} (use --force)")
-    sqls = dict(t.query("select name, sql from sqlite_master where type='table'"))
-    for n in EVENT_TABLES + [CHANGE_TABLE]:
-        cols, rows = fetch_table(t, n)
-        if not db.execute("select 1 from sqlite_master where name=?", (n,)).fetchone():
-            db.execute(sqls[n])
-        db.execute(f'delete from "{n}"')
-        if rows:
-            db.executemany(f'insert into "{n}" ({",".join(chr(34) + c + chr(34) for c in cols)}) values ({",".join("?" * len(cols))})', rows)
-        print("events", n, len(rows))
-    db.commit()
-    if db.execute("pragma quick_check").fetchone()[0] != "ok" or db.execute("pragma foreign_key_check").fetchall():
-        raise Fail("copy failed quick_check / foreign_key_check")
-    if R.table_counts(db) != before:
-        raise Fail("pull changed non-event tables")
-    db.close()
-    try:
-        swapped = R.swap(fp)
-    finally:
-        if R.WORK.exists():
-            R.WORK.unlink()
-    if not swapped:
-        raise Fail("main changed during the pull; nothing swapped (rerun)")
-    print("local main now at as_of", remote_asof[0][0])
+    raise Fail("retired 2026-11-18: the event job now uses the main database directly (Turso cse-main); "
+               "the local working copy syncs with it instead")
 
 
 def cmd_done_today(t, a):

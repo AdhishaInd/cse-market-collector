@@ -3,7 +3,8 @@
 A daily job that keeps a calendar of dated company events on the Colombo Stock Exchange: dividends (XD, record and
 payment dates), rights issues, scrip dividends, share splits, AGMs and EGMs, trading halts, watch-list changes,
 new-listing notices, filed results and estimated results-due dates. Runs on GitHub Actions
-(`.github/workflows/events.yml`). Data lives in a private Turso database (`cse-events`); this repository holds code
+(`.github/workflows/events.yml`). Data lives in the owner's private main database on Turso (`cse-main`, since 2026-11-18 the single database for
+all CSE data: financials, prices, events, corporate actions and the trade archive); this repository holds code
 only, and the job's logs show counts only.
 
 ## What a run does
@@ -45,7 +46,7 @@ Schedule:
 
 A failure opens a GitHub issue (label `events-failure`); the next success closes it.
 
-## The data (Turso `cse-events`)
+## The data (tables in Turso `cse-main` written by this job)
 
 | Table | Contents |
 |---|---|
@@ -63,20 +64,18 @@ page image by a person or agent).
 
 ## Local commands
 
-Credentials go in `~/.config/cse-events.env`, holding `TURSO_EVENTS_URL` and `TURSO_EVENTS_TOKEN` (the same values are
-the repository secrets). Load them with `set -a; . ~/.config/cse-events.env; set +a`.
+Credentials: `TURSO_EVENTS_URL` and `TURSO_EVENTS_TOKEN`, pointing at `cse-main` (the same values are the repository
+secrets), loaded with `set -a; . <env file>; set +a`.
 
 ```
-python3 -I events/pipeline/events_sync.py pull-events --main <path to cse_financials.db>   # events into the local main db (copy -> check -> swap)
-python3 -I events/pipeline/events_sync.py push-inputs --main <path to cse_financials.db>   # after a local refresh of reports / announcements / corporate actions
 python3 -I events/pipeline/events_sync.py needs-reading                                     # letters waiting for a reader
 python3 -I events/pipeline/test_events_incremental.py                                       # tests, no network
 gh workflow run events.yml -R AdhishaInd/cse-market-collector                               # run now
 ```
 
-`push-inputs` sends only tables whose content changed. Until it runs, the job uses the inputs from the last push. New
-dividends, meetings, halts and filings still arrive daily from the API; corporate actions and the report index catch
-up at the next push.
+The input tables are the main database's own tables: a local refresh of reports, announcements or corporate actions
+reaches the job as soon as the owner's working copy is synced to `cse-main`. (`push-inputs`, `pull-events` and `init`
+copied tables between the old separate events database and the main one; they were retired on 2026-11-18.)
 
 ## Reading flagged letters (on demand, for a person or an agent)
 
@@ -84,7 +83,7 @@ The automatic reader takes a letter's dates only when the text layer is clean an
 trading dates match the calendar. Scans and garbled text are flagged, and the issue `Rights letters waiting to be read`
 shows how many. To clear them:
 
-1. `set -a; . ~/.config/cse-events.env; set +a; python3 -I events/pipeline/events_sync.py pull --root events/work`
+1. `set -a; . <env file>; set +a; python3 -I events/pipeline/events_sync.py pull --root events/work`
 2. `EVENTS_ROOT=events/work python3 -I events/pipeline/letters.py needs-reading` lists each letter with its document
    URL (taken from the API, never guessed) and the reason it was refused.
 3. For each letter:
@@ -110,8 +109,8 @@ has passed.
 | Turso error | Pull or push failed | The push is one transaction, so a failed push leaves the previous state. Rerun the workflow. |
 
 **Feed gap** (`gaps` in the run status): two runs more than about 4 days apart, so announcements or filings between
-them may be missing from the rolling feeds. Halts and meeting notices come back with the next local `push-inputs`
-after an announcement-index refresh. The calendar's dividend, rights and split dates are not affected.
+them may be missing from the rolling feeds. Halts and meeting notices come back once a local announcement-index refresh
+is synced to `cse-main`. The calendar's dividend, rights and split dates are not affected.
 
 ## Limits
 
