@@ -65,6 +65,13 @@ def now():
     return dt.datetime.now(TZ)
 
 
+def gh_output(key, value):
+    """Pass a value to later workflow steps (no-op outside GitHub Actions)."""
+    if os.environ.get("GITHUB_OUTPUT"):
+        with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+            f.write(f"{key}={value}\n")
+
+
 # ---------- storage: Turso (libSQL over HTTP) when TURSO_DATABASE_URL is set, else local files ----------
 TURSO_URL = os.environ.get("TURSO_DATABASE_URL", "").replace("libsql://", "https://").rstrip("/")
 TURSO_TOKEN = os.environ.get("TURSO_AUTH_TOKEN", "")
@@ -220,6 +227,7 @@ def collect():
             raise Fail(f"dailyMarketSummery reports trading on {today} but tradeSummary is empty/stale "
                        f"(latest trade {last}); data may already be gone or the API changed")
         print(f"{today}: no trading today (latest trade {last}); nothing to archive"); return
+    gh_output("day", today.isoformat())
     # 3. market-wide snapshots
     rec = {"date": today.isoformat(), "fetched_at": now().isoformat(), "market_status": status, "tradeSummary": ts}
     for name, ep, params, method in [
@@ -249,17 +257,27 @@ def collect():
                 short.append(f"{x['symbol']} {len(rows)}/{x.get('tradevolume')}")
         trades[x["symbol"]] = {"id": x["id"], "rows": rows}
     rec["trades"] = trades
+    # Completeness is judged by the trade ids, which run in one market-wide sequence: ids missing inside the day's
+    # range are trades the feed did not give us (normal days: 3-21). tradeSummary's per-stock trade counts are NOT a
+    # reliable reference: on some days (12, 17, 19 Nov 2026) they exceed the complete, gap-free feed by up to 3%.
+    ids = sorted({r.get("id") or r.get("s") for v in trades.values() for r in v["rows"]} - {None})
+    id_gaps = (ids[-1] - ids[0] + 1 - len(ids)) if ids else 0
     rec["checks"] = {"stocks": len(ts), "trade_rows": sum(len(v["rows"]) for v in trades.values()),
-                     "short_stocks": short, "requests": calls}
+                     "short_stocks": short, "id_gaps": id_gaps, "requests": calls}
     stamps = [r["t"] for v in trades.values() for r in v["rows"] if r.get("t")]
     if not stamps or day_of(max(stamps)) != today:
         raise Fail("per-stock trade lists are empty or not for today (data reset or API change)")
     # 5. store (Turso, or local files when no database is configured)
     size = store(rec)
-    print(f"{today}: archived {len(ts)} stocks, {rec['checks']['trade_rows']} trades, "
+    print(f"{today}: archived {len(ts)} stocks, {rec['checks']['trade_rows']} trades, {id_gaps} trade ids missing, "
           f"{size // 1024} KB compressed, {calls} requests")
-    if len(short) > max(3, 0.05 * len(ts)):
-        raise Fail(f"saved, but {len(short)} stocks returned fewer trades than reported: {short[:10]}")
+    if id_gaps > max(50, 0.01 * len(ids)):
+        raise Fail(f"saved, but {id_gaps} trade ids are missing from the feed (range {ids[0]}-{ids[-1]}, "
+                   f"{len(ids)} trades); stocks short against tradeSummary: {short[:10]}")
+    gh_output("archived", today.isoformat())
+    if short:   # the feed is complete, so this is CSE's summary over-counting: report, do not fail
+        print(f"::warning::{today}: trade feed complete, but tradeSummary reports more trades than the feed for "
+              f"{len(short)} stocks (CSE-side count mismatch): {short[:10]}")
 
 
 def check():
@@ -272,6 +290,7 @@ def check():
         raise Fail("trading days missing from the archive: " + ", ".join(map(str, missing))
                    + ". Same-day data cannot be fetched after it resets.")
     print("archive complete for checked trading days:", ", ".join(map(str, sorted(days))) or "none")
+    gh_output("checked", "1")
 
 
 
@@ -294,7 +313,5 @@ if __name__ == "__main__":
     except Fail as e:
         msg = f"{mode} failed at {now():%Y-%m-%d %H:%M} Colombo: {e}"
         print(msg, file=sys.stderr)
-        if os.environ.get("GITHUB_OUTPUT"):
-            with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-                f.write(f"error={msg}\n")
+        gh_output("error", msg.replace("\n", " "))
         sys.exit(1)

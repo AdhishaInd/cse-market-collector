@@ -32,6 +32,9 @@ Without the secrets, `collect.py` writes `data/YYYY/MM/YYYY-MM-DD.json.gz` local
 - Checks at 23:15 (today) and 08:00 (previous day) compare the archive with the trading days the API itself
   reports, which catches days when GitHub skipped or delayed every run.
 - On any failure an issue labelled `collection-failure` is opened (or commented on), which emails the repo owner;
-  the next successful run closes it. Rerun by hand from Actions -> CSE daily archive -> Run workflow.
-- A day is also flagged if more than 5% of stocks return fewer trades than the summary reports.
+  the next run that archives a day or passes a check closes it (a run that finds nothing to do leaves it open).
+  Rerun by hand from Actions -> CSE daily archive -> Run workflow.
+- Completeness is judged by trade ids, which run in one market-wide sequence: a day is flagged when more than
+  max(50, 1%) ids are missing inside the day's range (normal days: 3-21). Stocks whose trade list is shorter than
+  the per-stock summary count only raise a warning: on some days CSE's summary counts exceed the complete feed.
 - Requests are sequential, about 2 seconds apart (~300 per day).

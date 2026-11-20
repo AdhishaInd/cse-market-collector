@@ -47,6 +47,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           ERR: ${{ steps.run.outputs.error }}
+          DAY: ${{ steps.run.outputs.day }}
         run: |
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           BODY="**${ERR:-Workflow failed (see log)}**
@@ -58,11 +59,13 @@ jobs:
           if [ -n "$OPEN" ]; then
             gh issue comment "$OPEN" --body "$BODY"
           else
-            gh issue create --title "CSE archive failed $(TZ=Asia/Colombo date +%F)" --label collection-failure --body "$BODY"
+            gh issue create --title "CSE archive failed ${DAY:-$(TZ=Asia/Colombo date +%F)}" --label collection-failure --body "$BODY"
           fi
 
+      # Only a run that archived a day or passed a check resolves anything; a no-op run ("no trading today",
+      # "already archived") must not close an open failure issue.
       - name: Close failure issue after recovery
-        if: success()
+        if: success() && (steps.run.outputs.archived != '' || steps.run.outputs.checked == '1')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
