@@ -37,4 +37,5 @@ Without the secrets, `collect.py` writes `data/YYYY/MM/YYYY-MM-DD.json.gz` local
 - Completeness is judged by trade ids, which run in one market-wide sequence: a day is flagged when more than
   max(50, 1%) ids are missing inside the day's range (normal days: 3-21). Stocks whose trade list is shorter than
   the per-stock summary count only raise a warning: on some days CSE's summary counts exceed the complete feed.
+  When more than max(3, 5%) stocks are short, an issue labelled `count-mismatch` is opened (never auto-closed).
 - Requests are sequential, about 2 seconds apart (~300 per day).

@@ -276,8 +276,12 @@ def collect():
                    f"{len(ids)} trades); stocks short against tradeSummary: {short[:10]}")
     gh_output("archived", today.isoformat())
     if short:   # the feed is complete, so this is CSE's summary over-counting: report, do not fail
-        print(f"::warning::{today}: trade feed complete, but tradeSummary reports more trades than the feed for "
-              f"{len(short)} stocks (CSE-side count mismatch): {short[:10]}")
+        msg = (f"{today}: trade feed complete ({id_gaps} trade ids missing), but tradeSummary reports "
+               f"{sum(x.get('tradevolume') or 0 for x in ts)} trades against {len(ids)} in the feed; "
+               f"{len(short)} stocks short (feed/summary): {short[:15]}")
+        print(f"::warning::{msg}")
+        if len(short) > max(3, 0.05 * len(ts)):   # many stocks: worth an issue (the workflow opens it)
+            gh_output("mismatch", msg)
 
 
 def check():

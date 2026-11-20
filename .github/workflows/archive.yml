@@ -62,6 +62,26 @@ jobs:
             gh issue create --title "CSE archive failed ${DAY:-$(TZ=Asia/Colombo date +%F)}" --label collection-failure --body "$BODY"
           fi
 
+      # The feed was complete but CSE's per-stock summary counted more trades for many stocks (e.g. 19 Nov 2026).
+      # Not a collection failure: own label, never auto-closed - close it after a look.
+      - name: Report summary count mismatch
+        if: success() && steps.run.outputs.mismatch != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MSG: ${{ steps.run.outputs.mismatch }}
+          DAY: ${{ steps.run.outputs.archived }}
+        run: |
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          BODY="**${MSG}**
+
+          The day is archived and the trade feed is complete (trade ids contiguous), so nothing was lost on our side.
+          CSE's tradeSummary counted more trades than its own trade-by-trade feed - usually a CSE-side incident
+          (look for a trading halt that day). Check whether these trades show up anywhere, then close this issue.
+
+          Run: $RUN_URL"
+          gh label create count-mismatch --color FBCA04 --description "CSE summary counts exceed the trade feed" 2>/dev/null || true
+          gh issue create --title "CSE summary count mismatch ${DAY}" --label count-mismatch --body "$BODY"
+
       # Only a run that archived a day or passed a check resolves anything; a no-op run ("no trading today",
       # "already archived") must not close an open failure issue.
       - name: Close failure issue after recovery
